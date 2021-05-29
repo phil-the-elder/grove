@@ -108,30 +108,30 @@ class DBManager:
         return None
 
 
-# Testing Section
-db = DBManager(r'F:\Phil Elder\Projects\Python\grove\Testing\saves.db')
+# # Testing Section
+# db = DBManager(r'F:\Phil Elder\Projects\Python\grove\Testing\saves.db')
 
-print(db.insert_row('test', (4, 'second rowwww!', 1)))
-
-
-db.delete_rows('test', ['*'])
-
-print(db.insert_row('test', (1, 'first row!', 1)))
-print(db.insert_row('test', (2, 'firssssst row!', 1)))
-
-db.delete_rows('test', [1])
-
-# print(db.get_id('test', 'second row'))
+# print(db.insert_row('test', (4, 'second rowwww!', 1)))
 
 
-# db.delete_row('test', 2)
+# db.delete_rows('test', ['*'])
 
-# update_dict = {
-#     'name': 'flapskittlessss',
-#     'priority': 9
-# }
-# db.update_row('test', 2, update_dict)
+# print(db.insert_row('test', (1, 'first row!', 1)))
+# print(db.insert_row('test', (2, 'firssssst row!', 1)))
 
-cursor = db.conn.execute('select * from test')
-print(cursor.fetchall())
+# db.delete_rows('test', [1])
+
+# # print(db.get_id('test', 'second row'))
+
+
+# # db.delete_row('test', 2)
+
+# # update_dict = {
+# #     'name': 'flapskittlessss',
+# #     'priority': 9
+# # }
+# # db.update_row('test', 2, update_dict)
+
+# cursor = db.conn.execute('select * from test')
+# print(cursor.fetchall())
 

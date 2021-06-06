@@ -32,19 +32,13 @@ class Creature:
         """
         return id
 
-    def farm(self, is_pc: bool):
-        """ Starts the farm action. If the creature is the PC, adds things to inventory.
-        :bool is_pc: second creature's id
+    def use_tool(self, id: int):
+        """ Uses a tool defined by the id. If the user is not within range of a Source that the tool can manipulate, returns
+        an error dialog
+        :int id: item ID
         :return: None
         """
-        return is_pc
-
-    def fish(self, is_pc: bool):
-        """ Starts the fish action. If the creature is the PC, adds things to inventory.
-        :bool is_pc: second creature's id
-        :return: None
-        """
-        return is_pc
+        return id
 
     def exchange(self, is_pc: bool):
         """ Starts the exchange (buy/sell) action. If the creature is the PC, adds things to inventory.
@@ -146,7 +140,14 @@ class MainPC(Creature):
 
     def add_to_inventory(self, id: int):
         """ Adds an item to player's inventory given item ID.
-        :bool is_pc: second creature's id
+        :int id: item ID
+        :return: None
+        """
+        return id
+
+    def equip_item(self, id: int):
+        """ Equips an item given the item ID
+        :int id: item ID
         :return: None
         """
         return id

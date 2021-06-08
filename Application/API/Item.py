@@ -2,18 +2,18 @@
 class Item:
     """ Parent class for all items.
     :int id: item ID
-    :int x: current position (x)
-    :int y: current position (y)
+    :tuple location: current position (int x, int y)
+    :tuple size: size of icon in pixels (int width, int height)
     :bool inventoried: whether item is currently in inventory
     :int value: value of item
     :str name: item name
     :str icon: filepath to graphic for item
     :return: None
     """
-    def __init__(self, id: int, x: int, y: int, value: int, name: str, icon: str, inventoried: bool = False):
+    def __init__(self, id: int, location: tuple, size: tuple, value: int, name: str, icon: str, inventoried: bool = False):
         self.id = id
-        self.x = x
-        self.y = y
+        self.location = location
+        self.size = size
         self.value = value
         self.name = name
         self.icon = icon

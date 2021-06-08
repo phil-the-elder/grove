@@ -1,18 +1,18 @@
 
 class Creature:
     """ Parent class for all NPCs, monsters, as well as the main character.
-    :int x: current position (x)
-    :int y: current position (y)
+    :tuple location: current position (int x, int y)
+    :tuple size: size of icon in pixels (int width, int height)
     :int speed: speed rating for creature
     :str name: creature name
     :str icon: filepath to graphic for creature
     :bool wantstotalk: whether the creature has something to say to PC (red ! if so?)
     :return: None
     """
-    def __init__(self, id: int, x: int, y: int, speed: int, name: str, icon: str, wantstotalk: bool = False):
+    def __init__(self, id: int, location: tuple, size: tuple, speed: int, name: str, icon: str, wantstotalk: bool = False):
         self.id = id
-        self.x = x
-        self.y = y
+        self.location = location
+        self.size = size
         self.speed = speed
         self.name = name
         self.icon = icon

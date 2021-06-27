@@ -11,11 +11,10 @@ class Creature:
     :bool wantstotalk: whether the creature has something to say to PC (red ! if so?)
     :return: None
     """
-    def __init__(self, path: str, id: int, location: tuple, direction: str, size: tuple, speed: int, name: str, icon: str, wantstotalk: bool = False):
+    def __init__(self, path: str, id: int, location: tuple, size: tuple, speed: int, name: str, icon: str, wantstotalk: bool = False):
         self.path = path
         self.id = id
         self.location = location
-        self.direction = direction
         self.size = size
         self.speed = speed
         self.name = name
@@ -85,10 +84,10 @@ class MainPC(Creature):
     :list inventory: list of integer ids for items in player inventory
     :return: None
     """
-    def __init__(self, path, id, location, direction, size, speed, name, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, location, size, speed, name, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, farming: int, trading: int, fishing: int, handling: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, inventory: list):
-        super().__init__(path, id, location, direction, size, speed, name, icon, wantstotalk)
+        super().__init__(path, id, location, size, speed, name, icon, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence

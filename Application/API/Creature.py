@@ -11,26 +11,37 @@ class Creature:
     :bool wantstotalk: whether the creature has something to say to PC (red ! if so?)
     :return: None
     """
-    def __init__(self, path: str, id: int, location: tuple, direction: str, size: tuple, speed: int, name: str, icon: str, wantstotalk: bool = False):
+    def __init__(self, path: str, id: int, location: tuple, size: tuple, speed: int, name: str, icons: dict, wantstotalk: bool = False):
         self.path = path
         self.id = id
         self.location = location
-        self.direction = direction
         self.size = size
         self.speed = speed
         self.name = name
-        self.icon = pygame.image.load(icon)
+        self.icons = icons
+        self.icon = icons['default']
+        self.icon_index = 0
         self.wantstotalk = wantstotalk
         self.moveup = False
         self.movedown = False
         self.moveleft = False
         self.moveright = False
 
-    def move(self):
+    def move(self, direction: str, ismoving: bool):
         """ moves the creature given a cardinal direction.
         :str direction: direction to move creature (N, S, E, W)
+        :bool ismoving: whether the movement starts or stops in that direction
         :return: None
         """
+        if direction == 'N':
+            self.moveup = ismoving
+        elif direction == 'W':
+            self.moveleft = ismoving
+        elif direction == 'S':
+            self.movedown = ismoving
+        elif direction == 'E':
+            self.moveright = ismoving
+        
 
     def interact(self, id: int):
         """ Opens up an interaction window with a id-defined second creature.
@@ -63,6 +74,7 @@ class Creature:
 
 class MainPC(Creature):
     """ Sub class for the main character
+    :str direction: player's current direction
     :int strength: player's current strength rating
     :int accuracy: player's current accuracy rating
     :int intelligence: player's current intelligence rating
@@ -85,10 +97,10 @@ class MainPC(Creature):
     :list inventory: list of integer ids for items in player inventory
     :return: None
     """
-    def __init__(self, path, id, location, direction, size, speed, name, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, location, size, speed, name, icons, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, farming: int, trading: int, fishing: int, handling: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, inventory: list):
-        super().__init__(path, id, location, direction, size, speed, name, icon, wantstotalk)
+        super().__init__(path, id, location, size, speed, name, icons, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence
@@ -108,6 +120,7 @@ class MainPC(Creature):
         self.ranged_equip = ranged_equip
         self.spell_equip = spell_equip
         self.inventory = inventory
+        self.direction = 'S'
 
     def inspect(self, id: int):
         """ Opens an inspection dialog box with item id.
@@ -179,10 +192,10 @@ class Monster(Creature):
     :int difficulty_rating: difficulty rating for the monster (controls loot, affects combat)
     :return: None
     """
-    def __init__(self, path, id, location, size, speed, name, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, location, size, speed, name, icons, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, difficulty_rating: int):
-        super().__init__(path, id, location, size, speed, name, icon, wantstotalk)
+        super().__init__(path, id, location, size, speed, name, icons, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence

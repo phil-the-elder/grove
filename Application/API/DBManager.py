@@ -119,25 +119,25 @@ class DBManager:
 
 
 # # Testing Section
-db = DBManager(r'F:\Phil Elder\Projects\Python\grove\Testing\saves.db')
+# db = DBManager(r'F:\Phil Elder\Projects\Python\grove\Testing\saves.db')
 
-fields = [{
-    'name': 'id',
-    'type': 'int',
-    'meta': 'PRIMARY KEY'
-}, {
-    'name': 'name',
-    'type': 'str',
-    'meta': 'NULL'
-}, {
-    'name': 'flaps',
-    'type': 'str',
-    'meta': 'NULL'
-}]
+# fields = [{
+#     'name': 'id',
+#     'type': 'int',
+#     'meta': 'PRIMARY KEY'
+# }, {
+#     'name': 'name',
+#     'type': 'str',
+#     'meta': 'NULL'
+# }, {
+#     'name': 'flaps',
+#     'type': 'str',
+#     'meta': 'NULL'
+# }]
 
-db.create_table('test', fields)
-# print(db.insert_row('test', (4, 'second rowwww!', 'skitle')))
-print(db.get_first_row('test'))
+# db.create_table('test', fields)
+# # print(db.insert_row('test', (4, 'second rowwww!', 'skitle')))
+# print(db.get_first_row('test'))
 
 # 
 

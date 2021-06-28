@@ -10,8 +10,9 @@ class Game:
     :str name: name
     :str directory: game directory
     :str corner_icon: filepath for corner icon 
+    :int fps: game framerate
     """
-    def __init__(self, screen_size: tuple, name: str, directory: str, corner_icon: str):
+    def __init__(self, screen_size: tuple, name: str, directory: str, corner_icon: str, fps: int):
         self.screen_size = screen_size
         self.directory = directory
         self.screen = pygame.display.set_mode(screen_size)
@@ -19,7 +20,10 @@ class Game:
         self.start_game(name, os.path.join(directory, corner_icon))
         self.pc = self.load_character()
         self.dialog = False
+        self.fps = fps
+        pygame.time.Clock().tick(self.fps)
         self.dialog_img = pygame.image.load(os.path.join(directory, 'Resources/dialog.png'))
+        self.map_img = pygame.image.load(os.path.join(directory, 'Resources/map.png'))
     
     def start_game(self, name, corner_icon):
         """ starts the game 
@@ -32,11 +36,69 @@ class Game:
         icon = pygame.image.load(corner_icon)
         pygame.display.set_icon(icon)
 
+    def update_display(self):
+
+        self.screen.blit(self.map_img, (0, 0)) 
+        # self.screen.fill((0, 0, 0)) 
+
+        for event in pygame.event.get():
+            does_clear_queue = self.handle_event(event)
+            if does_clear_queue:
+              pygame.event.clear()
+        if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
+            index_rate = self.fps // len(self.pc.icons['move_right']) * int(1/self.pc.speed * 2)
+            self.pc.icon_index += 1
+            if self.pc.icon_index // index_rate == len(self.pc.icons['move_right']):
+                self.pc.icon_index = 0
+        if self.pc.moveup:
+            self.pc.location[1] -= self.pc.speed
+            self.pc.direction = 'N'
+            self.pc.icon = self.pc.icons['move_up'][self.pc.icon_index // index_rate]
+        if self.pc.movedown:
+            self.pc.direction = 'S'
+            self.pc.location[1] += self.pc.speed
+            self.pc.icon = self.pc.icons['move_down'][self.pc.icon_index // index_rate]
+        if self.pc.moveleft:
+            self.pc.direction = 'W'
+            self.pc.location[0] -= self.pc.speed
+            self.pc.icon = self.pc.icons['move_left'][self.pc.icon_index // index_rate]
+        if self.pc.moveright:
+            self.pc.direction = 'E'
+            self.pc.location[0] += self.pc.speed
+            self.pc.icon = self.pc.icons['move_right'][self.pc.icon_index // index_rate]
+        if self.dialog:
+            self.screen.blit(self.dialog_img, (100, 500))
+        self.screen.blit(self.pc.icon, tuple(self.pc.location))
+        pygame.display.update()
+
     def load_character(self):
         # db_conn = DBManager.DBManager(os.path.join(self.directory, 'Database/main.db'))
         # main_char = db_conn.get_first_row('MainPC')
         # INCOMPLETE - HAVE TO REWORK DBMANAGER CLASS TO HANDLE CHARACTER GRAB
-        main_char = Creature.MainPC(self.directory, 1, [200,200], 'N', 32, 0.5, 'flips', os.path.join(self.directory, 'Resources/1_E.png'), False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
+        main_char_icons = {
+            'default': pygame.image.load(os.path.join(self.directory, 'Resources/standing.png')),
+            'move_left': [pygame.image.load(os.path.join(self.directory, 'Resources/L1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L4.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L6.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L8.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L9.png'))],
+            'move_right': [pygame.image.load(os.path.join(self.directory, 'Resources/R1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R4.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R6.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R8.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R9.png'))],
+            'move_up': [pygame.image.load(os.path.join(self.directory, 'Resources/L1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L4.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L6.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L8.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/L9.png'))],
+            'move_down': [pygame.image.load(os.path.join(self.directory, 'Resources/R1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R4.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R6.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R8.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/R9.png'))]
+        }
+        main_char = Creature.MainPC(self.directory, 1, [200,200], 32, 0.2, 'flips', main_char_icons, False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
         return main_char
 
     def change_screen(self, new_size):
@@ -55,25 +117,25 @@ class Game:
             self.running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
-                self.pc.moveup = True
+                self.pc.move('N', True)
             if event.key == pygame.K_a:
-                self.pc.moveleft = True
+                self.pc.move('W', True)
             if event.key == pygame.K_s:
-                self.pc.movedown = True
+                self.pc.move('S', True)
             if event.key == pygame.K_d:
-                self.pc.moveright = True
+                self.pc.move('E', True)
             if event.key == pygame.K_e:
                 self.open_dialog(self.pc.location, self.pc.direction)
                 return True
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_w:
-                self.pc.moveup = False
+                self.pc.move('N', False)
             if event.key == pygame.K_a:
-                self.pc.moveleft = False
+                self.pc.move('W', False)
             if event.key == pygame.K_s:
-                self.pc.movedown = False
+                self.pc.move('S', False)
             if event.key == pygame.K_d:
-                self.pc.moveright = False
+                self.pc.move('E', False)
 
         return False
 

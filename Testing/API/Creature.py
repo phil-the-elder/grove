@@ -11,25 +11,53 @@ class Creature:
     :bool wantstotalk: whether the creature has something to say to PC (red ! if so?)
     :return: None
     """
-    def __init__(self, path: str, id: int, location: tuple, size: tuple, speed: int, name: str, icon: str, wantstotalk: bool = False):
+    def __init__(self, path: str, id: int, location: tuple, size: tuple, speed: int, name: str, icons: dict, move_icons: list, wantstotalk: bool = False):
         self.path = path
         self.id = id
         self.location = location
         self.size = size
         self.speed = speed
         self.name = name
-        self.icon = pygame.image.load(icon)
+        self.icons = icons
+        self.icon = icons['default']
+        self.icon_index = 0
         self.wantstotalk = wantstotalk
         self.moveup = False
         self.movedown = False
         self.moveleft = False
         self.moveright = False
 
-    def move(self):
+    def move(self, direction: str, ismoving: bool):
         """ moves the creature given a cardinal direction.
         :str direction: direction to move creature (N, S, E, W)
+        :bool ismoving: whether the movement starts or stops in that direction
         :return: None
         """
+        fps = pygame.time.Clock()
+        index_rate = fps // len(self.icons['move_right'])
+        if self.icon_index == index_rate:
+            self.icon_index = 0
+        if direction == 'N':
+            self.moveup = ismoving
+        elif direction == 'W':
+            self.moveleft = ismoving
+        elif direction == 'S':
+            self.movedown = ismoving
+        elif direction == 'E':
+            self.movedown = ismoving
+        
+        if self.moveup:
+            icon_list = self.icons['move_up']
+        elif self.moveleft:
+            icon_list = self.icons['move_up']
+        elif self.moveright:
+            icon_list = self.icons['move_up']
+        elif self.movedown:
+            icon_list = self.icons['move_up']
+        self.icon = icon_list[self.icon_index // index_rate]
+
+        self.icon_index += 1
+        
 
     def interact(self, id: int):
         """ Opens up an interaction window with a id-defined second creature.
@@ -84,10 +112,10 @@ class MainPC(Creature):
     :list inventory: list of integer ids for items in player inventory
     :return: None
     """
-    def __init__(self, path, id, location, size, speed, name, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, location, size, speed, name, icons, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, farming: int, trading: int, fishing: int, handling: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, inventory: list):
-        super().__init__(path, id, location, size, speed, name, icon, wantstotalk)
+        super().__init__(path, id, location, size, speed, name, icons, icon, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence
@@ -178,10 +206,10 @@ class Monster(Creature):
     :int difficulty_rating: difficulty rating for the monster (controls loot, affects combat)
     :return: None
     """
-    def __init__(self, path, id, location, size, speed, name, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, location, size, speed, name, icons, icon, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, difficulty_rating: int):
-        super().__init__(path, id, location, size, speed, name, icon, wantstotalk)
+        super().__init__(path, id, location, size, speed, name, icons, icon, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence

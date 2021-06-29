@@ -24,6 +24,8 @@ class Game:
         pygame.time.Clock().tick(self.fps)
         self.dialog_img = pygame.image.load(os.path.join(directory, 'Resources/dialog.png'))
         self.map_img = pygame.image.load(os.path.join(directory, 'Resources/map.png'))
+        self.map_dimensions = [self.map_img.get_width(), self.map_img.get_height()]
+        self.map_location = [0, 0]
     
     def start_game(self, name, corner_icon):
         """ starts the game 
@@ -38,8 +40,7 @@ class Game:
 
     def update_display(self):
 
-        # self.screen.blit(self.map_img, (0, 0)) 
-        self.screen.fill((0, 0, 0)) 
+        # self.screen.fill((0, 0, 0)) 
 
         for event in pygame.event.get():
             does_clear_queue = self.handle_event(event)
@@ -51,24 +52,45 @@ class Game:
             if self.pc.icon_index // index_rate == len(self.pc.icons['move_right']):
                 self.pc.icon_index = 0
         if self.pc.moveup:
-            self.pc.location[1] -= self.pc.speed
+            if self.pc.location[1] > self.screen_size[1] / 2 - 32 and self.pc.location[1] >= 0:
+                self.pc.location[1] -= self.pc.speed
+            elif self.map_location[1] <= 0:
+                self.map_location[1] += self.pc.speed
+            elif self.pc.location[1] >= 0:
+                self.pc.location[1] -= self.pc.speed
             self.pc.direction = 'N'
             self.pc.icon = self.pc.icons['move_up'][self.pc.icon_index // index_rate]
         if self.pc.movedown:
+            if self.pc.location[1] < self.screen_size[1] / 2 - 32 and self.pc.location[1] <= self.screen_size[1]-64:
+                self.pc.location[1] += self.pc.speed
+            elif self.map_location[1] >= self.screen_size[1] - self.map_dimensions[1]:
+                self.map_location[1] -= self.pc.speed
+            elif self.pc.location[1] <= self.screen_size[1]-64:
+                self.pc.location[1] += self.pc.speed
             self.pc.direction = 'S'
-            self.pc.location[1] += self.pc.speed
             self.pc.icon = self.pc.icons['move_down'][self.pc.icon_index // index_rate]
         if self.pc.moveleft:
+            if self.pc.location[0] > self.screen_size[0] / 2 - 32 and self.pc.location[0] >= 0:
+                self.pc.location[0] -= self.pc.speed
+            elif self.map_location[0] <= 0:
+                self.map_location[0] += self.pc.speed
+            elif self.pc.location[0] >= 0:
+                self.pc.location[0] -= self.pc.speed
             self.pc.direction = 'W'
-            self.pc.location[0] -= self.pc.speed
             self.pc.icon = self.pc.icons['move_left'][self.pc.icon_index // index_rate]
         if self.pc.moveright:
+            if self.pc.location[0] < self.screen_size[0] / 2 - 32 and self.pc.location[0] <= self.screen_size[0]-64:
+                self.pc.location[0] += self.pc.speed
+            elif self.map_location[0] >= self.screen_size[0] - self.map_dimensions[0]:
+                self.map_location[0] -= self.pc.speed
+            elif self.pc.location[0] <= self.screen_size[0]-64:
+                self.pc.location[0] += self.pc.speed
             self.pc.direction = 'E'
-            self.pc.location[0] += self.pc.speed
             self.pc.icon = self.pc.icons['move_right'][self.pc.icon_index // index_rate]
         if self.dialog:
             self.dialog_img = pygame.transform.smoothscale(self.dialog_img, (self.screen_size[0] - 100, self.screen_size[1] // 4))
             self.screen.blit(self.dialog_img, (50, int(self.screen_size[1] * 0.75 - 50)))
+        self.screen.blit(self.map_img, tuple(self.map_location)) 
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
         pygame.display.update()
 

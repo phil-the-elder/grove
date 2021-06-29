@@ -38,8 +38,8 @@ class Game:
 
     def update_display(self):
 
-        self.screen.blit(self.map_img, (0, 0)) 
-        # self.screen.fill((0, 0, 0)) 
+        # self.screen.blit(self.map_img, (0, 0)) 
+        self.screen.fill((0, 0, 0)) 
 
         for event in pygame.event.get():
             does_clear_queue = self.handle_event(event)
@@ -67,7 +67,8 @@ class Game:
             self.pc.location[0] += self.pc.speed
             self.pc.icon = self.pc.icons['move_right'][self.pc.icon_index // index_rate]
         if self.dialog:
-            self.screen.blit(self.dialog_img, (100, 500))
+            self.dialog_img = pygame.transform.smoothscale(self.dialog_img, (self.screen_size[0] - 100, self.screen_size[1] // 4))
+            self.screen.blit(self.dialog_img, (50, int(self.screen_size[1] * 0.75 - 50)))
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
         pygame.display.update()
 
@@ -98,7 +99,8 @@ class Game:
             pygame.image.load(os.path.join(self.directory, 'Resources/R7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R8.png')),
             pygame.image.load(os.path.join(self.directory, 'Resources/R9.png'))]
         }
-        main_char = Creature.MainPC(self.directory, 1, [200,200], 32, 0.2, 'flips', main_char_icons, False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
+        center_position = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
+        main_char = Creature.MainPC(self.directory, 1, center_position, 32, 0.2, 'flips', main_char_icons, False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
         return main_char
 
     def change_screen(self, new_size):

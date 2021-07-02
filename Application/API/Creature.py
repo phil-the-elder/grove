@@ -1,9 +1,10 @@
 import pygame
+from . import Map, Item
 
 class Creature:
     """ Parent class for all NPCs, monsters, as well as the main character.
     :str path: filepath to the main game folder
-    :list location: current position (int x, int y)
+    :list location: current location (int x, int y)
     :tuple size: size of icon in pixels (int width, int height)
     :int speed: speed rating for creature
     :str name: creature name
@@ -11,7 +12,7 @@ class Creature:
     :bool wantstotalk: whether the creature has something to say to PC (red ! if so?)
     :return: None
     """
-    def __init__(self, path: str, id: int, location: tuple, size: tuple, speed: int, name: str, icons: dict, wantstotalk: bool = False):
+    def __init__(self, path: str, id: int, location: list, size: tuple, speed: int, name: str, icons: dict, wantstotalk: bool = False):
         self.path = path
         self.id = id
         self.location = location
@@ -41,14 +42,35 @@ class Creature:
             self.movedown = ismoving
         elif direction == 'E':
             self.moveright = ismoving
+
+    def check_surroundings(self, blockers: list, pos_index: int, range_index: int, add_dimensions: bool):
+        for b in blockers:
+            is_collision = False
+            if b.size[range_index] > self.size[range_index]:
+                if b.location[range_index] < self.location[range_index] < b.location[range_index] + b.size[range_index] or b.location[range_index] < self.location[range_index] + self.size[range_index] < b.location[range_index] + b.size[range_index]:
+                    is_collision = True
+            else:
+                if self.location[range_index] < b.location[range_index] < self.location[range_index] + self.size[range_index] or self.location[range_index] < b.location[range_index] + b.size[range_index] < self.location[range_index] + self.size[range_index]:
+                    is_collision = True
+            if is_collision:
+                if add_dimensions:
+                    curr_pos = self.location[pos_index]
+                    wall = b.location[pos_index] + b.size[pos_index]
+                else:
+                    curr_pos = self.location[pos_index] + self.size[pos_index]
+                    wall = b.location[pos_index]
+                if abs(curr_pos - wall) < 2:
+                    return b
+        return False
         
 
-    def interact(self, id: int):
-        """ Opens up an interaction window with a id-defined second creature.
-        :int id: second creature's id
+    def interact(self, game, thing):
+        """ Opens up an interaction window with a second object.
+        :thing: thing to interact with
         :return: None
         """
-        return id
+        if isinstance(thing, Item.Item):
+            game.map.items.remove(thing)
 
     def use_tool(self, id: int):
         """ Uses a tool defined by the id. If the user is not within range of a Source that the tool can manipulate, returns

@@ -1,6 +1,6 @@
 import pygame
 import os
-from . import Creature, DBManager
+from . import Creature, DBManager, Item, Map
 
 class Game:
     """ Parent class for the main Game configurations
@@ -23,9 +23,11 @@ class Game:
         self.fps = fps
         pygame.time.Clock().tick(self.fps)
         self.dialog_img = pygame.image.load(os.path.join(directory, 'Resources/dialog.png'))
-        self.map_img = pygame.image.load(os.path.join(directory, 'Resources/map.png'))
-        self.map_dimensions = [self.map_img.get_width(), self.map_img.get_height()]
-        self.map_location = [0, 0]
+        self.map = self.load_map()
+
+    def load_map(self):
+        return Map.Map(self.directory, os.path.join(self.directory, 'Resources/map.png'), [0, 0])
+
     
     def start_game(self, name, corner_icon):
         """ starts the game 
@@ -39,90 +41,84 @@ class Game:
         pygame.display.set_icon(icon)
 
     def update_display(self):
-
-        # self.screen.fill((0, 0, 0)) 
-
         for event in pygame.event.get():
             does_clear_queue = self.handle_event(event)
             if does_clear_queue:
               pygame.event.clear()
+        blockers = self.map.items + self.map.blocks
         if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
             index_rate = self.fps // len(self.pc.icons['move_right']) * int(1/self.pc.speed * 2)
             self.pc.icon_index += 1
             if self.pc.icon_index // index_rate == len(self.pc.icons['move_right']):
                 self.pc.icon_index = 0
         if self.pc.moveup:
-            if self.pc.location[1] > self.screen_size[1] / 2 - 32 and self.pc.location[1] >= 0:
-                self.pc.location[1] -= self.pc.speed
-            elif self.map_location[1] <= 0:
-                self.map_location[1] += self.pc.speed
-            elif self.pc.location[1] >= 0:
-                self.pc.location[1] -= self.pc.speed
+            if not self.pc.check_surroundings(blockers, 1, 0, True):
+                if self.pc.location[1] > self.screen_size[1] / 2 - 32 and self.pc.location[1] >= 0:
+                    self.pc.location[1] -= self.pc.speed
+                elif self.map.location[1] <= 0:
+                    self.map.move(1, self.pc.speed)
+                elif self.pc.location[1] >= 0:
+                    self.pc.location[1] -= self.pc.speed
             self.pc.direction = 'N'
             self.pc.icon = self.pc.icons['move_up'][self.pc.icon_index // index_rate]
         if self.pc.movedown:
-            if self.pc.location[1] < self.screen_size[1] / 2 - 32 and self.pc.location[1] <= self.screen_size[1]-64:
-                self.pc.location[1] += self.pc.speed
-            elif self.map_location[1] >= self.screen_size[1] - self.map_dimensions[1]:
-                self.map_location[1] -= self.pc.speed
-            elif self.pc.location[1] <= self.screen_size[1]-64:
-                self.pc.location[1] += self.pc.speed
+            if not self.pc.check_surroundings(blockers, 1, 0, False):
+                if self.pc.location[1] < self.screen_size[1] / 2 - 32 and self.pc.location[1] <= self.screen_size[1]-64:
+                    self.pc.location[1] += self.pc.speed
+                elif self.map.location[1] >= self.screen_size[1] - self.map.dimensions[1]:
+                    self.map.move(1, 0 - self.pc.speed)
+                elif self.pc.location[1] <= self.screen_size[1]-64:
+                    self.pc.location[1] += self.pc.speed
             self.pc.direction = 'S'
             self.pc.icon = self.pc.icons['move_down'][self.pc.icon_index // index_rate]
         if self.pc.moveleft:
-            if self.pc.location[0] > self.screen_size[0] / 2 - 32 and self.pc.location[0] >= 0:
-                self.pc.location[0] -= self.pc.speed
-            elif self.map_location[0] <= 0:
-                self.map_location[0] += self.pc.speed
-            elif self.pc.location[0] >= 0:
-                self.pc.location[0] -= self.pc.speed
+            if not self.pc.check_surroundings(blockers, 0, 1, True):
+                if self.pc.location[0] > self.screen_size[0] / 2 - 32 and self.pc.location[0] >= 0:
+                    self.pc.location[0] -= self.pc.speed
+                elif self.map.location[0] <= 0:
+                    self.map.move(0, self.pc.speed)
+                elif self.pc.location[0] >= 0:
+                    self.pc.location[0] -= self.pc.speed
             self.pc.direction = 'W'
             self.pc.icon = self.pc.icons['move_left'][self.pc.icon_index // index_rate]
         if self.pc.moveright:
-            if self.pc.location[0] < self.screen_size[0] / 2 - 32 and self.pc.location[0] <= self.screen_size[0]-64:
-                self.pc.location[0] += self.pc.speed
-            elif self.map_location[0] >= self.screen_size[0] - self.map_dimensions[0]:
-                self.map_location[0] -= self.pc.speed
-            elif self.pc.location[0] <= self.screen_size[0]-64:
-                self.pc.location[0] += self.pc.speed
+            if not self.pc.check_surroundings(blockers, 0, 1, False):
+                if self.pc.location[0] < self.screen_size[0] / 2 - 32 and self.pc.location[0] <= self.screen_size[0]-64:
+                    self.pc.location[0] += self.pc.speed
+                elif self.map.location[0] >= self.screen_size[0] - self.map.dimensions[0]:
+                    self.map.move(0, 0 - self.pc.speed)
+                elif self.pc.location[0] <= self.screen_size[0]-64:
+                    self.pc.location[0] += self.pc.speed
             self.pc.direction = 'E'
             self.pc.icon = self.pc.icons['move_right'][self.pc.icon_index // index_rate]
+        # self.screen.fill((0, 0, 0)) 
+        self.screen.blit(self.map.image, tuple(self.map.location)) 
+        self.screen.blit(self.pc.icon, tuple(self.pc.location))
+        for item in self.map.items:
+            self.screen.blit(item.icon, tuple(item.location))
         if self.dialog:
             self.dialog_img = pygame.transform.smoothscale(self.dialog_img, (self.screen_size[0] - 100, self.screen_size[1] // 4))
             self.screen.blit(self.dialog_img, (50, int(self.screen_size[1] * 0.75 - 50)))
-        self.screen.blit(self.map_img, tuple(self.map_location)) 
-        self.screen.blit(self.pc.icon, tuple(self.pc.location))
         pygame.display.update()
+
 
     def load_character(self):
         # db_conn = DBManager.DBManager(os.path.join(self.directory, 'Database/main.db'))
         # main_char = db_conn.get_first_row('MainPC')
         # INCOMPLETE - HAVE TO REWORK DBMANAGER CLASS TO HANDLE CHARACTER GRAB
         main_char_icons = {
-            'default': pygame.image.load(os.path.join(self.directory, 'Resources/standing.png')),
+            'default': pygame.image.load(os.path.join(self.directory, 'Resources/D2.png')),
             'move_left': [pygame.image.load(os.path.join(self.directory, 'Resources/L1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L9.png'))],
+            pygame.image.load(os.path.join(self.directory, 'Resources/L3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png'))],
             'move_right': [pygame.image.load(os.path.join(self.directory, 'Resources/R1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R9.png'))],
-            'move_up': [pygame.image.load(os.path.join(self.directory, 'Resources/L1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L9.png'))],
-            'move_down': [pygame.image.load(os.path.join(self.directory, 'Resources/R1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R9.png'))]
+            pygame.image.load(os.path.join(self.directory, 'Resources/R3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png'))],
+            'move_up': [pygame.image.load(os.path.join(self.directory, 'Resources/U1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/U2.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/U3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/U2.png'))],
+            'move_down': [pygame.image.load(os.path.join(self.directory, 'Resources/D1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/D2.png')),
+            pygame.image.load(os.path.join(self.directory, 'Resources/D3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/D2.png'))]
         }
         center_position = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
-        main_char = Creature.MainPC(self.directory, 1, center_position, 32, 0.2, 'flips', main_char_icons, False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
+        main_char = Creature.MainPC(self.directory, 1, center_position, (64, 64), 0.2, 'flips', main_char_icons, False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
         return main_char
 
     def change_screen(self, new_size):
@@ -149,7 +145,7 @@ class Game:
             if event.key == pygame.K_d:
                 self.pc.move('E', True)
             if event.key == pygame.K_e:
-                self.open_dialog(self.pc.location, self.pc.direction)
+                self.check_interact(self.pc.location, self.pc.direction)
                 return True
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_w:
@@ -160,8 +156,39 @@ class Game:
                 self.pc.move('S', False)
             if event.key == pygame.K_d:
                 self.pc.move('E', False)
-
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                # left click
+                self.check_interact(self.pc.location, self.pc.direction, pygame.mouse.get_pos())
+            if event.button == 3:
+                # right click
+                self.check_interact(self.pc.location, self.pc.direction, pygame.mouse.get_pos())
+            if event.button == 4:
+                # scroll up
+                self.check_interact(self.pc.location, self.pc.direction, pygame.mouse.get_pos())
+            if event.button == 5:
+                # scroll down
+                self.check_interact(self.pc.location, self.pc.direction, pygame.mouse.get_pos())
         return False
 
-    def open_dialog(self, location, direction):
+    def check_interact(self, location: list, direction: str, mouse_loc: tuple = (0, 0)):
+        interaction_points = self.map.creatures + self.map.items
+        if direction == 'N':
+            interact_obj = self.pc.check_surroundings(interaction_points, 1, 0, True)
+        elif direction == 'S':
+            interact_obj = self.pc.check_surroundings(interaction_points, 1, 0, False)
+        elif direction == 'E':
+            interact_obj = self.pc.check_surroundings(interaction_points, 0, 1, False)
+        elif direction == 'W':
+            interact_obj = self.pc.check_surroundings(interaction_points, 0, 1, True)
+        if not interact_obj:
+            self.open_dialog('Hmmm... nothing to see here...')
+        else:
+            self.pc.interact(self, interact_obj)
+
+
+
+
+    def open_dialog(self, text: str):
         self.dialog = True if not self.dialog else False
+        print(text)

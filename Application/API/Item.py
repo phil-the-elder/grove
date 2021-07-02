@@ -1,4 +1,4 @@
-
+import pygame
 class Item:
     """ Parent class for all items.
     :int id: item ID
@@ -10,13 +10,13 @@ class Item:
     :str icon: filepath to graphic for item
     :return: None
     """
-    def __init__(self, id: int, location: tuple, size: tuple, value: int, name: str, icon: str, inventoried: bool = False):
+    def __init__(self, id: int, location: list, size: tuple, value: int, name: str, icon: str, inventoried: bool = False):
         self.id = id
         self.location = location
         self.size = size
         self.value = value
         self.name = name
-        self.icon = icon
+        self.icon = pygame.image.load(icon)
         self.inventoried = inventoried
 
 

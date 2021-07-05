@@ -42,35 +42,7 @@ class Creature:
             self.movedown = ismoving
         elif direction == 'E':
             self.moveright = ismoving
-
-    def check_surroundings(self, blockers: list, pos_index: int, range_index: int, add_dimensions: bool):
-        for b in blockers:
-            is_collision = False
-            if b.size[range_index] > self.size[range_index]:
-                if b.location[range_index] < self.location[range_index] < b.location[range_index] + b.size[range_index] or b.location[range_index] < self.location[range_index] + self.size[range_index] < b.location[range_index] + b.size[range_index]:
-                    is_collision = True
-            else:
-                if self.location[range_index] < b.location[range_index] < self.location[range_index] + self.size[range_index] or self.location[range_index] < b.location[range_index] + b.size[range_index] < self.location[range_index] + self.size[range_index]:
-                    is_collision = True
-            if is_collision:
-                if add_dimensions:
-                    curr_pos = self.location[pos_index]
-                    wall = b.location[pos_index] + b.size[pos_index]
-                else:
-                    curr_pos = self.location[pos_index] + self.size[pos_index]
-                    wall = b.location[pos_index]
-                if abs(curr_pos - wall) < 2:
-                    return b
-        return False
         
-
-    def interact(self, game, thing):
-        """ Opens up an interaction window with a second object.
-        :thing: thing to interact with
-        :return: None
-        """
-        if isinstance(thing, Item.Item):
-            game.map.items.remove(thing)
 
     def use_tool(self, id: int):
         """ Uses a tool defined by the id. If the user is not within range of a Source that the tool can manipulate, returns
@@ -143,6 +115,44 @@ class MainPC(Creature):
         self.spell_equip = spell_equip
         self.inventory = inventory
         self.direction = 'S'
+
+    def interact(self, game, thing):
+        """ Opens up an interaction window with a second object.
+        :thing: thing to interact with
+        :return: None
+        """
+        if isinstance(thing, Item.Item):
+            game.map.items.remove(thing)
+            self.inventory.append(thing)
+
+    def check_surroundings(self, blockers: list, pos_index: int, range_index: int, add_dimensions: bool):
+        ''' Checks surroundings for blockers or items
+        :list blockers: all blockers currently on map
+        :int pos_index: the axis to be checked for blockers (x or y)
+        :int range_index: the axis to be checked to indicate whether pc is in the range of a blocker (x or y)
+        :bool add_dimensions: whether the size along an axis is to be added to its coordinate (i.e. if approached from the south or east)
+        :return: None        
+        '''
+        for b in blockers:
+            is_collision = False
+            if b.size[range_index] > self.size[range_index]:
+                if b.location[range_index] < self.location[range_index] < b.location[range_index] + b.size[range_index] or b.location[range_index] < self.location[range_index] + self.size[range_index] < b.location[range_index] + b.size[range_index]:
+                    is_collision = True
+            else:
+                if self.location[range_index] < b.location[range_index] < self.location[range_index] + self.size[range_index] or self.location[range_index] < b.location[range_index] + b.size[range_index] < self.location[range_index] + self.size[range_index]:
+                    is_collision = True
+            if is_collision:
+                if add_dimensions:
+                    curr_pos = self.location[pos_index]
+                    wall = b.location[pos_index] + b.size[pos_index]
+                else:
+                    curr_pos = self.location[pos_index] + self.size[pos_index]
+                    wall = b.location[pos_index]
+                if abs(curr_pos - wall) < 2:
+                    return b
+        return False
+
+
 
     def inspect(self, id: int):
         """ Opens an inspection dialog box with item id.

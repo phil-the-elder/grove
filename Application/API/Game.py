@@ -32,6 +32,7 @@ class Game:
         self.fps = fps
         pygame.time.Clock().tick(self.fps)
         self.map = self.load_map( os.path.join(self.directory, 'Resources/map.png'), [0, 0])
+        self.npc_move_count = 0
 
     def load_map(self, map: str, coordinates: list):
         """ Loads the Map class with the defined map image at the defined coordinates
@@ -78,10 +79,15 @@ class Game:
         self.pc.direction = direction
         self.pc.icon = self.pc.icons[direction][self.pc.icon_index // index_rate]
 
+    def get_index_rate(self, icons, speed):
+        return self.fps // len(icons) * int(1/speed * 2)
+
     def update_display(self):
         ''' Main function to update the map display
         :return: None        
         '''
+        if self.npc_move_count > self.fps * 36:
+            self.npc_move_count = 0
         # iterate through all user-defined events to see if the event queue needs to be cleared
         for event in pygame.event.get():
             does_clear_queue = self.handle_event(event)
@@ -89,8 +95,8 @@ class Game:
               pygame.event.clear()
         # get all current map blocker locations. If the pc is moving, calculate index rate and pass functions to movement handler
         if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
-            blockers = self.map.items + self.map.blocks
-            index_rate = self.fps // len(self.pc.icons['E']) * int(1/self.pc.speed * 2)
+            blockers = self.map.items + self.map.blocks + self.map.creatures
+            index_rate = self.get_index_rate(self.pc.icons['E'], self.pc.speed)
             self.pc.icon_index += 1
             if self.pc.icon_index // index_rate == len(self.pc.icons['E']):
                 self.pc.icon_index = 0
@@ -108,6 +114,10 @@ class Game:
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
         for item in self.map.items:
             self.screen.blit(item.icon, tuple(item.location))
+        for creature in self.map.creatures:
+            npc_index_rate = self.get_index_rate(creature.icons['E'], creature.speed)
+            creature.action(self.fps, self.npc_move_count, npc_index_rate)
+            self.screen.blit(creature.icon, tuple(creature.location))
         if self.dialog:
             self.dialog_img = pygame.transform.smoothscale(self.dialog_img, (self.screen_size[0] - 100, self.screen_size[1] // 4))
             self.screen.blit(self.dialog_img, (50, int(self.screen_size[1] * 0.75 - 50)))
@@ -119,6 +129,7 @@ class Game:
             for item in self.pc.inventory:
                 self.screen.blit(item.inv_icon, (inv_x, inv_y))
                 inv_x += self.inventory_img.get_width() / 9
+        self.npc_move_count += 1
         pygame.display.update()
 
 
@@ -141,7 +152,7 @@ class Game:
             pygame.image.load(os.path.join(self.directory, 'Resources/D3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/D2.png'))]
         }
         center_position = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
-        main_char = Creature.MainPC(self.directory, 1, center_position, (64, 64), 0.2, 'flips', main_char_icons, False, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
+        main_char = Creature.MainPC(self.directory, 1, center_position, (64, 64), 0.2, 'flips', main_char_icons, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
         return main_char
 
     def change_screen(self, new_size):

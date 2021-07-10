@@ -1,18 +1,18 @@
 import pygame
+import random
 from . import Map, Item
 
 class Creature:
-    """ Parent class for all NPCs, monsters, as well as the main character.
+    """ Parent class for all NPCs and monsters, as well as the main character.
     :str path: filepath to the main game folder
     :list location: current location (int x, int y)
     :tuple size: size of icon in pixels (int width, int height)
     :int speed: speed rating for creature
     :str name: creature name
     :str icon: filepath to graphic for creature
-    :bool wantstotalk: whether the creature has something to say to PC (red ! if so?)
     :return: None
     """
-    def __init__(self, path: str, id: int, location: list, size: tuple, speed: int, name: str, icons: dict, wantstotalk: bool = False):
+    def __init__(self, path: str, id: int, location: list, size: tuple, speed: int, name: str, icons: dict):
         self.path = path
         self.id = id
         self.location = location
@@ -22,7 +22,7 @@ class Creature:
         self.icons = icons
         self.icon = icons['default']
         self.icon_index = 0
-        self.wantstotalk = wantstotalk
+        self.is_talking = False
         self.moveup = False
         self.movedown = False
         self.moveleft = False
@@ -34,14 +34,15 @@ class Creature:
         :bool ismoving: whether the movement starts or stops in that direction
         :return: None
         """
-        if direction == 'N':
-            self.moveup = ismoving
-        elif direction == 'W':
-            self.moveleft = ismoving
-        elif direction == 'S':
-            self.movedown = ismoving
-        elif direction == 'E':
-            self.moveright = ismoving
+        if not self.is_talking:
+            if direction == 'N':
+                self.moveup = ismoving
+            elif direction == 'W':
+                self.moveleft = ismoving
+            elif direction == 'S':
+                self.movedown = ismoving
+            elif direction == 'E':
+                self.moveright = ismoving
         
 
     def use_tool(self, id: int):
@@ -65,6 +66,73 @@ class Creature:
         :return: None
         """
         return is_pc
+
+class NPC(Creature):
+    """ Sub class for all NPCs
+    :list bounds: box bounds of creature movement on map (int xmin, int xmax, int ymin, int ymax)
+    :list move_range: the 
+    :bool wants_to_talk: whether the creature has something to say to PC (red ! if so?)
+    :bool is_talking: whether the creature is interacting
+    """
+    def __init__(self, path: str, id: int, location: list, size: tuple, speed: int, name: str, icons: dict, bounds: list, move_range: list, wants_to_talk: bool):
+        super().__init__(path, id, location, size, speed, name, icons)
+        self.bounds = bounds
+        self.move_range = move_range
+        self.wants_to_talk = wants_to_talk
+
+    def action(self, fps, count, index_rate):
+        # self.pc.icon = self.pc.icons[direction][self.pc.icon_index // index_rate]
+        if not self.is_talking:
+            if count == self.move_range[0]:
+                str_directions = []
+                max_distance = self.speed * fps * (abs(self.move_range[1] - self.move_range[0]) / fps)
+                if self.location[0] > self.bounds[0] + max_distance:
+                    str_directions.append('W')
+                if self.location[0] < self.bounds[1] - max_distance:
+                    str_directions.append('E')
+                if self.location[1] > self.bounds[2] + max_distance:
+                    str_directions.append('N')
+                if self.location[1] < self.bounds[3] - max_distance:
+                    str_directions.append('S')
+                if len(str_directions) > 0:
+                    index = random.randint(0, len(str_directions) - 1)
+                    direction = str_directions[index]
+                    if direction == 'W':
+                        self.moveright = True
+                    elif direction == 'E':
+                        self.moveleft = True
+                    elif direction == 'N':
+                        self.moveup = True
+                    elif direction == 'S':
+                        self.movedown = True
+                else:
+                    direction = 'action'
+            elif self.move_range[0] < count <= self.move_range[1]:
+                if self.moveup:
+                    self.location[1] -= self.speed
+                    direction = 'N'
+                elif self.movedown:
+                    self.location[1] += self.speed
+                    direction = 'S'
+                elif self.moveleft:
+                    self.location[0] += self.speed
+                    direction = 'E'
+                elif self.moveright:
+                    self.location[0] -= self.speed
+                    direction = 'W'
+                else:
+                    direction = 'action'
+            else:
+                direction = 'action'
+                self.moveup = False
+                self.movedown = False
+                self.moveright = False
+                self.moveleft = False
+            self.icon_index += 1
+            if self.icon_index // index_rate == len(self.icons['E']):
+                self.icon_index = 0
+            self.icon = self.icons[direction][self.icon_index // index_rate]
+            
 
 class MainPC(Creature):
     """ Sub class for the main character
@@ -91,10 +159,10 @@ class MainPC(Creature):
     :list inventory: list of integer ids for items in player inventory
     :return: None
     """
-    def __init__(self, path, id, location, size, speed, name, icons, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, location, size, speed, name, icons, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, farming: int, trading: int, fishing: int, handling: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, inventory: list):
-        super().__init__(path, id, location, size, speed, name, icons, wantstotalk)
+        super().__init__(path, id, location, size, speed, name, icons)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence
@@ -124,6 +192,21 @@ class MainPC(Creature):
         if isinstance(thing, Item.Item):
             game.map.items.remove(thing)
             self.inventory.append(thing)
+        elif isinstance(thing, NPC):
+            self.is_talking = not self.is_talking
+            game.open_dialog(thing.name)
+            if not thing.is_talking:
+                thing.is_talking = True
+                if self.direction == 'N':
+                    thing.icon = thing.icons['S'][0]
+                elif self.direction == 'S':
+                    thing.icon = thing.icons['N'][0]
+                elif self.direction == 'E':
+                    thing.icon = thing.icons['W'][0]
+                elif self.direction == 'W':
+                    thing.icon = thing.icons['E'][0]
+            else:
+                thing.is_talking = False
 
     def check_surroundings(self, blockers: list, pos_index: int, range_index: int, add_dimensions: bool):
         ''' Checks surroundings for blockers or items
@@ -205,7 +288,7 @@ class MainPC(Creature):
         """
         return id
 
-class Monster(Creature):
+class Monster(NPC):
     """ Sub class for monster/hostile creatures
     :int strength: player's current strength rating
     :int accuracy: player's current accuracy rating

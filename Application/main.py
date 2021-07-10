@@ -13,7 +13,6 @@ def main():
         game.update_display()
 if __name__ == '__main__':
     main()
-        
 
 
 

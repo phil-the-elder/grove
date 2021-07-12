@@ -80,7 +80,7 @@ class NPC(Creature):
         self.move_range = move_range
         self.wants_to_talk = wants_to_talk
 
-    def action(self, fps, count, index_rate):
+    def action(self, fps, count, index_rate, pc):
         # self.pc.icon = self.pc.icons[direction][self.pc.icon_index // index_rate]
         if not self.is_talking:
             if count == self.move_range[0]:
@@ -98,9 +98,9 @@ class NPC(Creature):
                     index = random.randint(0, len(str_directions) - 1)
                     direction = str_directions[index]
                     if direction == 'W':
-                        self.moveright = True
-                    elif direction == 'E':
                         self.moveleft = True
+                    elif direction == 'E':
+                        self.moveright = True
                     elif direction == 'N':
                         self.moveup = True
                     elif direction == 'S':
@@ -109,17 +109,21 @@ class NPC(Creature):
                     direction = 'action'
             elif self.move_range[0] < count <= self.move_range[1]:
                 if self.moveup:
-                    self.location[1] -= self.speed
+                    if abs(self.location[1] - pc.location[1] - pc.size[1]) > 2:
+                        self.location[1] -= self.speed
                     direction = 'N'
                 elif self.movedown:
-                    self.location[1] += self.speed
+                    if abs(self.location[1] + self.size[1] - pc.location[1]) > 2:
+                        self.location[1] += self.speed
                     direction = 'S'
                 elif self.moveleft:
-                    self.location[0] += self.speed
-                    direction = 'E'
-                elif self.moveright:
-                    self.location[0] -= self.speed
+                    if abs(self.location[0] - pc.location[0] - pc.size[0]) > 2:
+                        self.location[0] -= self.speed
                     direction = 'W'
+                elif self.moveright:
+                    if abs(self.location[0] + self.size[0] - pc.location[0]) > 2:
+                        self.location[0] += self.speed
+                    direction = 'E'
                 else:
                     direction = 'action'
             else:
@@ -193,20 +197,21 @@ class MainPC(Creature):
             game.map.items.remove(thing)
             self.inventory.append(thing)
         elif isinstance(thing, NPC):
-            self.is_talking = not self.is_talking
-            game.open_dialog(thing.name)
-            if not thing.is_talking:
-                thing.is_talking = True
-                if self.direction == 'N':
-                    thing.icon = thing.icons['S'][0]
-                elif self.direction == 'S':
-                    thing.icon = thing.icons['N'][0]
-                elif self.direction == 'E':
-                    thing.icon = thing.icons['W'][0]
-                elif self.direction == 'W':
-                    thing.icon = thing.icons['E'][0]
-            else:
-                thing.is_talking = False
+            if not thing.moveleft and not thing.moveright and not thing.moveup and not thing.movedown:
+                self.is_talking = not self.is_talking
+                game.open_dialog(thing.name)
+                if not thing.is_talking:
+                    thing.is_talking = True
+                    if self.direction == 'N':
+                        thing.icon = thing.icons['S'][0]
+                    elif self.direction == 'S':
+                        thing.icon = thing.icons['N'][0]
+                    elif self.direction == 'E':
+                        thing.icon = thing.icons['W'][0]
+                    elif self.direction == 'W':
+                        thing.icon = thing.icons['E'][0]
+                else:
+                    thing.is_talking = False
 
     def check_surroundings(self, blockers: list, pos_index: int, range_index: int, add_dimensions: bool):
         ''' Checks surroundings for blockers or items

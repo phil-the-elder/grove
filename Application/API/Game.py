@@ -31,16 +31,17 @@ class Game:
         self.inventory_img = pygame.image.load(os.path.join(directory, 'Resources/inventory.png'))
         self.fps = fps
         pygame.time.Clock().tick(self.fps)
-        self.map = self.load_map( os.path.join(self.directory, 'Resources/map.png'), [0, 0])
+        self.map = self.load_map(os.path.join(self.directory, 'Resources/map.png'), [0, 0], 'dynamic')
         self.npc_move_count = 0
 
-    def load_map(self, map: str, coordinates: list):
+    def load_map(self, map: str, coordinates: list, type: str):
         """ Loads the Map class with the defined map image at the defined coordinates
+        :string directory: filepath to 
         :string map: filepath to the map image
         :list coordinates: x/y coordinates of the top left corner of rendered map
         :return: None
         """
-        return Map.Map(self.directory, map, coordinates)
+        return Map.Map(self.directory, map, coordinates, type)
 
     
     def start_game(self, name: str, corner_icon: str):
@@ -116,7 +117,7 @@ class Game:
             self.screen.blit(item.icon, tuple(item.location))
         for creature in self.map.creatures:
             npc_index_rate = self.get_index_rate(creature.icons['E'], creature.speed)
-            creature.action(self.fps, self.npc_move_count, npc_index_rate)
+            creature.action(self.fps, self.npc_move_count, npc_index_rate, self.pc)
             self.screen.blit(creature.icon, tuple(creature.location))
         if self.dialog:
             self.dialog_img = pygame.transform.smoothscale(self.dialog_img, (self.screen_size[0] - 100, self.screen_size[1] // 4))
@@ -240,5 +241,10 @@ class Game:
         :str text: text to display on the dialog screen
         :return: None        
         '''
+        self.pc.movedown = False
+        self.pc.moveleft = False
+        self.pc.moveup = False
+        self.pc.moveright = False
+        self.pc.is_talking = not self.pc.is_talking
         self.dialog = True if not self.dialog else False
         print(text)

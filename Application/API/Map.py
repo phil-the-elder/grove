@@ -13,15 +13,17 @@ class Map:
     :str directory (input): the game directory
     :str image (input): the filepath for the main map image
     :list location (input): the render coordinates for the map
+    :str type (input): the type of map (static, dynamic, sidescroll)
     :list dimensions: the width and height of the map
     :list items: all items to be rendered on the map
     :list blocks: all impassable areas on the map
     :list creatures: all creatures to be rendered on the map
     """
-    def __init__(self, directory: str, image: str, location: list):
+    def __init__(self, directory: str, image: str, location: list, type: str):
         self.directory = directory
         self.image = pygame.image.load(image)
         self.location = location
+        self.type = type
         self.dimensions = [self.image.get_width(), self.image.get_height()]
         self.items = self.load_items()
         self.blocks = self.load_blocks()

@@ -236,7 +236,7 @@ class MainPC(Creature):
                 else:
                     curr_pos = self.location[pos_index] + self.size[pos_index]
                     wall = b.location[pos_index]
-                if abs(curr_pos - wall) < 2:
+                if abs(curr_pos - wall) < 10:
                     return b
         return False
 

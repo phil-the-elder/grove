@@ -1,6 +1,8 @@
 import pygame
 import os
 import operator
+
+from pygame.constants import RESIZABLE
 from . import Creature, DBManager, Item, Map
 
 class Game:
@@ -21,7 +23,7 @@ class Game:
     def __init__(self, screen_size: tuple, name: str, directory: str, corner_icon: str, fps: int):
         self.screen_size = screen_size
         self.directory = directory
-        self.screen = pygame.display.set_mode(screen_size)
+        self.screen = pygame.display.set_mode(screen_size, RESIZABLE)
         self.running = True
         self.start_game(name, os.path.join(directory, corner_icon))
         self.pc = self.load_character()
@@ -30,8 +32,8 @@ class Game:
         self.inventory = False
         self.inventory_img = pygame.image.load(os.path.join(directory, 'Resources/inventory.png'))
         self.fps = fps
-        pygame.time.Clock().tick(self.fps)
-        self.map = self.load_map(os.path.join(self.directory, 'Resources/map.png'), [0, 0], 'dynamic')
+        self.clock = pygame.time.Clock()
+        self.map = self.load_map('Resources/map.png', [0, 0], 'dynamic')
         self.npc_move_count = 0
 
     def load_map(self, map: str, coordinates: list, type: str):
@@ -41,7 +43,13 @@ class Game:
         :list coordinates: x/y coordinates of the top left corner of rendered map
         :return: None
         """
-        return Map.Map(self.directory, map, coordinates, type)
+        self.screen.fill((0, 0, 0))
+        map = Map.Map(self.directory, map, coordinates, type)
+        if map.dimensions[0] < self.screen_size[0]:
+            map.location[0] = (self.screen_size[0] / 2) - (map.dimensions[0] / 2)
+        if map.dimensions[1] < self.screen_size[1]:
+            map.location[1] = (self.screen_size[1] / 2) - (map.dimensions[1] / 2)
+        return map
 
     
     def start_game(self, name: str, corner_icon: str):
@@ -70,7 +78,10 @@ class Game:
         :bool add_dimensions: whether to add the size of the blocker to its coordinate (i.e. if approaching from the south or east)
         :return: None
         """
-        if not self.pc.check_surroundings(blockers, pos_index, range_index, add_dimensions):
+        interact_obj = self.pc.check_surroundings(blockers, pos_index, range_index, add_dimensions)
+        if type(interact_obj) == Map.Portal:
+            self.map = self.load_map(interact_obj.get_map().image_str, interact_obj.get_map().location, interact_obj.get_map().type)
+        elif not interact_obj:
             if char_relate(self.pc.location[pos_index], self.screen_size[pos_index] / 2 - 32) and char_relate(self.pc.location[pos_index], char_limit):
                 self.pc.location[pos_index] += speed
             elif map_relate(self.map.location[pos_index], map_limit):
@@ -87,7 +98,8 @@ class Game:
         ''' Main function to update the map display
         :return: None        
         '''
-        if self.npc_move_count > self.fps * 36:
+        self.clock.tick(self.fps)
+        if self.npc_move_count > self.fps * 3:
             self.npc_move_count = 0
         # iterate through all user-defined events to see if the event queue needs to be cleared
         for event in pygame.event.get():
@@ -96,7 +108,7 @@ class Game:
               pygame.event.clear()
         # get all current map blocker locations. If the pc is moving, calculate index rate and pass functions to movement handler
         if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
-            blockers = self.map.items + self.map.blocks + self.map.creatures
+            blockers = self.map.items + self.map.blocks + self.map.creatures + self.map.portals
             index_rate = self.get_index_rate(self.pc.icons['E'], self.pc.speed)
             self.pc.icon_index += 1
             if self.pc.icon_index // index_rate == len(self.pc.icons['E']):
@@ -104,11 +116,11 @@ class Game:
         if self.pc.moveup:
             self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 1, 0, 'N', 0 - self.pc.speed, index_rate, True)
         if self.pc.movedown:
-            self.movement_handler(blockers, self.screen_size[1] - 64.1, operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
+            self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
         if self.pc.moveleft:
             self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 0, 1, 'W', 0 - self.pc.speed, index_rate, True)
         if self.pc.moveright:
-            self.movement_handler(blockers, self.screen_size[0] - 64.1, operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
+            self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
         # blit the map, pc location, items, and if necessary the dialog box or inventory
         # self.screen.fill((0, 0, 0)) 
         self.screen.blit(self.map.image, tuple(self.map.location)) 
@@ -153,7 +165,7 @@ class Game:
             pygame.image.load(os.path.join(self.directory, 'Resources/D3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/D2.png'))]
         }
         center_position = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
-        main_char = Creature.MainPC(self.directory, 1, center_position, (64, 64), 0.2, 'flips', main_char_icons, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
+        main_char = Creature.MainPC(self.directory, 1, center_position, (64, 64), 2, 'flips', main_char_icons, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
         return main_char
 
     def change_screen(self, new_size):
@@ -162,12 +174,16 @@ class Game:
         :return: None
         """
         self.screen_size = new_size
+        self.load_map(self.map.image_str, self.map.location, self.map.type)
+        self.screen.blit(self.map.image, tuple(self.map.location))
 
     def handle_event(self, event):
         """ main event handler for all key, mouse interactions 
         :object event: event type
         return: None
         """
+        if event.type == pygame.VIDEORESIZE:
+            self.change_screen((event.w, event.h))
         if event.type == pygame.QUIT:
             self.running = False
         if event.type == pygame.KEYDOWN:
@@ -182,6 +198,8 @@ class Game:
             if event.key == pygame.K_e:
                 self.check_interact(self.pc.direction)
                 return True
+            if event.key == pygame.K_m:
+                self.map = self.load_map('Resources/MEGAMAP_1.png', [0, 0], 'dynamic')
             if event.key == pygame.K_q:
                 self.open_inventory()
                 return True

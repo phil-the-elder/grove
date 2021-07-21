@@ -3,20 +3,10 @@ import os
 from . import Item, DBManager, Creature
 
 class Block:
-    def __init__(self, id: int, location: tuple, size: tuple):
+    def __init__(self, id: int, location: list, size: tuple):
         self.id = id
         self.location = location
         self.size = size
-
-class Portal:
-    def __init__(self, map_id: int, location: tuple, size: tuple):
-        self.map_id = map_id
-        self.location = location
-        self.size = size
-
-    def get_map(self):
-        # TODO: use self.map_id to get map info from database
-        return Map(r'C:\Projects\grove\Application', 'Resources/map_2.png', [0, 0], 'dynamic')
 
 class Map:
     """ Parent class for the game map
@@ -39,7 +29,6 @@ class Map:
         self.items = self.load_items()
         self.blocks = self.load_blocks()
         self.creatures = self.load_creatures()
-        self.portals = self.load_portals()
 
     def load_creatures(self):
         ''' load all creatures on the map
@@ -135,10 +124,6 @@ class Map:
         # ]
         block_list = []
         return block_list
-    
-    def load_portals(self):
-        portal_list = [Portal(1, (50, 50), (64, 64))]
-        return portal_list
 
     def move(self, index: int, speed: float):
         ''' move the map on player movement

@@ -7,7 +7,7 @@ class DBManager:
     def create_connection(self, db_file):
         """ create a database connection to the SQLite database
             specified by db_file
-        :param db_file: database file
+        :string db_file: database file
         :return: Connection object or None
         """
         conn = None
@@ -21,9 +21,9 @@ class DBManager:
 
     def create_table(self, table_name, fields):
         """ create a table from the create_table_sql statement
-        :param conn: Connection object
-        :param table_name: a table name
-        :param fields: list of field objects (keys: name (str), type (str), meta (str))
+        :obj conn: Connection object
+        :string table_name: a table name
+        :list fields: list of field objects (keys: name (str), type (str), meta (str))
         :meta values: PRIMARY KEY, NOT NULL, NULL
         :return:
         """
@@ -38,7 +38,7 @@ class DBManager:
     def get_colnames(self, table):
         """
         Get column names from table
-        :param table: table name
+        :string table: table name
         :return: list column names
         """
         cur = self.conn.execute(f'SELECT * FROM {table}')
@@ -49,7 +49,7 @@ class DBManager:
     def get_first_row(self, table):
         """
         Get first row from table (e.g. get main character)
-        :param table: table name
+        :string table: table name
         :return: tuple row
         """
         sql = f'SELECT * FROM {table} ORDER BY ROWID ASC LIMIT 1'
@@ -58,11 +58,39 @@ class DBManager:
         row = cur.fetchone()
         return row
 
+    def get_row_by_id(self, table, id):
+        """
+        Get a row from a table given the table name and id
+        :string table: table name
+        :int id: row id
+        :return: tuple row
+        """
+        sql = f'SELECT * FROM {table} WHERE ID = {id}'
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        row = cur.fetchone()
+        return row
+
+    
+    def get_next_id(self, table):
+        """
+        Get the next ID to be used for a table
+        :string table: table name
+        :return: int id
+        """
+        sql = f'SELECT * FROM {table} ORDER BY ROWID DESC LIMIT 1'
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row:
+            return row[0] + 1
+        return 1
+
     def insert_row(self, table, row):
         """
         Create a new row
-        :param table: string table name
-        :param row: tuple row values
+        :string table: string table name
+        :tuple row: tuple row values
         :return: int row id
         """
 
@@ -76,9 +104,9 @@ class DBManager:
     def update_row(self, table, id, body):
         """
         Update a row given its id
-        :param table: string table name
-        :param id: int id
-        :param body: update dict (key = column, value = update value)
+        :string table: string table name
+        :int id: int id
+        :dict body: update dict (key = column, value = update value)
         :return: int row id
         """
         formatted_body_array = [f'{f} = "{body[f]}"' for f in body]
@@ -92,8 +120,8 @@ class DBManager:
     def delete_rows(self, table, ids):
         """
         Delete a row given its id
-        :param table: string table name
-        :param id: list (int) ids
+        :string table: string table name
+        :int id: list (int) ids
         :return: None
         """
         if ids[0] == '*':

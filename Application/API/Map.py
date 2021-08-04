@@ -9,37 +9,50 @@ class Block:
         self.size = size
 
 class Portal:
-    def __init__(self, map_id: int, location: tuple, size: tuple):
+    def __init__(self, dbconn, map_id: int, location: tuple, size: tuple, dest_id: int):
+        self.dbconn = dbconn
         self.map_id = map_id
         self.location = location
         self.size = size
+        self.dest_id = dest_id
 
     def get_map(self):
         # TODO: use self.map_id to get map info from database
-        return Map(r'C:\Projects\grove\Application', 'Resources/map_2.png', [0, 0], 'dynamic')
+        return self.dest_id
+        # db_row = dbconn.get_row_by_id('Maps', self.dest_id)
+        # coords = [int(db_row[3].split(', ')[0]), int(db_row[3].split(', ')[1])]
+        # pc_start = [int(db_row[5].split(', ')[0]), int(db_row[5].split(', ')[1])]
+        # self.screen.fill((0, 0, 0))
+        # return Map(self.dbconn, db_row[1], self.directory, db_row[2], coords, db_row[4], pc_start)
 
 class Map:
     """ Parent class for the game map
+    :obj dbconn (input): main game db connection object
+    :int game_id (input): the game the map is attached to
     :str directory (input): the game directory
     :str image (input): the filepath for the main map image
     :list location (input): the render coordinates for the map
     :str type (input): the type of map (static, dynamic, sidescroll)
+    :list pc_start (input): the coordinates for the pc's starting position
     :list dimensions: the width and height of the map
     :list items: all items to be rendered on the map
     :list blocks: all impassable areas on the map
     :list creatures: all creatures to be rendered on the map
     """
-    def __init__(self, directory: str, image: str, location: list, type: str):
+    def __init__(self, dbconn, game_id: int, directory: str, image: str, location: list, type: str, pc_start: list):
+        self.dbconn = dbconn
+        self.game_id = game_id
         self.directory = directory
         self.image_str = image
-        self.image = pygame.image.load(os.path.join(self.directory, image)).convert()
+        self.image = pygame.image.load(os.path.join(self.directory, f'Resources/{image}')).convert()
         self.location = location
         self.type = type
+        self.pc_start = pc_start
         self.dimensions = [self.image.get_width(), self.image.get_height()]
         self.items = self.load_items()
         self.blocks = self.load_blocks()
         self.creatures = self.load_creatures()
-        self.portals = self.load_portals()
+        self.portals = self.load_portals(dbconn)
 
     def load_creatures(self):
         ''' load all creatures on the map
@@ -73,7 +86,7 @@ class Map:
             pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
             pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png'))]
         }
-        creature_list = [Creature.NPC(self.directory, 1, [300, 300], (64, 64), 1, 'flaps', icon_dict, [200, 400, 200, 400], [0, 60], False)]
+        creature_list = [Creature.NPC(self.directory, 1, 1, [300, 300], (64, 64), 1, 'flaps', icon_dict, [200, 400, 200, 400], [0, 60], False)]
         return creature_list
 
     def load_items(self):
@@ -83,32 +96,32 @@ class Map:
         # db_conn = DBManager.DBManager(os.path.join(self.directory, 'Database/main.db'))
         # main_char = db_conn.get_first_row('MainPC')
         # INCOMPLETE - HAVE TO REWORK DBMANAGER CLASS TO HANDLE GETTING ALL ACTIVE ITEMS
-        item_list = [Item.Item(1, [1000,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1100,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1200,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1300,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1400,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1500,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1600,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1700,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1800,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1900,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [2000,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [2100,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [2200,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1000,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1100,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1200,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1300,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1400,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1500,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1600,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1700,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1800,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [1900,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [2000,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [2100,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, [2200,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png'))]
+        item_list = [Item.Item(1, 1, [1000,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1100,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1200,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1300,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1400,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1500,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1600,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1700,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1800,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1900,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [2000,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [2100,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [2200,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1000,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1100,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1200,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1300,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1400,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1500,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1600,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1700,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1800,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [1900,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [2000,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [2100,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
+        Item.Item(1, 1, [2200,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png'))]
         # item_list = []
         return item_list
 
@@ -136,8 +149,8 @@ class Map:
         block_list = []
         return block_list
     
-    def load_portals(self):
-        portal_list = [Portal(1, (50, 50), (64, 64))]
+    def load_portals(self, conn):
+        portal_list = [Portal(conn, 1, (50, 50), (64, 64), 2)]
         return portal_list
 
     def move(self, index: int, speed: float):

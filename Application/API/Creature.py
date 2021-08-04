@@ -6,15 +6,17 @@ class Creature:
     """ Parent class for all NPCs and monsters, as well as the main character.
     :str path: filepath to the main game folder
     :list location: current location (int x, int y)
+    :int map_id: map_id
     :tuple size: size of icon in pixels (int width, int height)
     :int speed: speed rating for creature
     :str name: creature name
     :str icon: filepath to graphic for creature
     :return: None
     """
-    def __init__(self, path: str, id: int, location: list, size: tuple, speed: int, name: str, icons: dict):
+    def __init__(self, path: str, id: int, map_id: int, location: list, size: tuple, speed: int, name: str, icons: dict):
         self.path = path
         self.id = id
+        self.map_id = map_id
         self.location = location
         self.size = size
         self.speed = speed
@@ -70,12 +72,12 @@ class Creature:
 class NPC(Creature):
     """ Sub class for all NPCs
     :list bounds: box bounds of creature movement on map (int xmin, int xmax, int ymin, int ymax)
-    :list move_range: the 
+    :list move_range: the count at which the NPC starts to move, and the count at which the NPC starts their action
     :bool wants_to_talk: whether the creature has something to say to PC (red ! if so?)
     :bool is_talking: whether the creature is interacting
     """
-    def __init__(self, path: str, id: int, location: list, size: tuple, speed: int, name: str, icons: dict, bounds: list, move_range: list, wants_to_talk: bool):
-        super().__init__(path, id, location, size, speed, name, icons)
+    def __init__(self, path: str, id: int, map_id: int, location: list, size: tuple, speed: int, name: str, icons: dict, bounds: list, move_range: list, wants_to_talk: bool):
+        super().__init__(path, id, map_id, location, size, speed, name, icons)
         self.bounds = bounds
         self.move_range = move_range
         self.wants_to_talk = wants_to_talk
@@ -163,10 +165,10 @@ class MainPC(Creature):
     :list inventory: list of integer ids for items in player inventory
     :return: None
     """
-    def __init__(self, path, id, location, size, speed, name, icons, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, map_id, location, size, speed, name, icons, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, farming: int, trading: int, fishing: int, handling: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, inventory: list):
-        super().__init__(path, id, location, size, speed, name, icons)
+        super().__init__(path, id, map_id, location, size, speed, name, icons)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence
@@ -310,12 +312,13 @@ class Monster(NPC):
     :int ranged_equip: id for equipment currently equipped as ranged attack item (from inventory)
     :int spell_equip: id for equipment currently equipped as spell attack item (from inventory)
     :int difficulty_rating: difficulty rating for the monster (controls loot, affects combat)
+    :list inventory: inventory for monster
     :return: None
     """
-    def __init__(self, path, id, location, size, speed, name, icons, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, map_id, location, size, speed, name, icons, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, head_equip: int, body_equip: int, melee_equip: int,
-                    ranged_equip: int, spell_equip: int, difficulty_rating: int):
-        super().__init__(path, id, location, size, speed, name, icons, wantstotalk)
+                    ranged_equip: int, spell_equip: int, difficulty_rating: int, inventory: list):
+        super().__init__(path, id, map_id, location, size, speed, name, icons, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence
@@ -331,6 +334,7 @@ class Monster(NPC):
         self.ranged_equip = ranged_equip
         self.spell_equip = spell_equip
         self.difficulty_rating = difficulty_rating
+        self.inventory = inventory
 
     def attack_melee(self, id: int, alias: list):
         """uses second creature ID and outcome alias to determine melee attack outcome.

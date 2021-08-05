@@ -1,4 +1,6 @@
 import pygame
+import os
+
 class Item:
     """ Parent class for all items.
     :int id: item ID
@@ -12,15 +14,19 @@ class Item:
     :bool inventoried: whether the item is inventoried
     :return: None
     """
-    def __init__(self, id: int, map_id: int, location: list, size: tuple, value: int, name: str, icon: str, inv_icon: str, inventoried: bool = False):
+    def __init__(self, id: int, directory: str, map_id: int, location: list, size: tuple, name: str, type: str, desc: str, rarity: str, value: int, inventoried: bool = False):
         self.id = id
+        self.directory = directory
         self.map_id = map_id
         self.location = location
         self.size = size
-        self.value = value
         self.name = name
-        self.icon = pygame.image.load(icon)
-        self.inv_icon = pygame.image.load(inv_icon)
+        self.type = type
+        self.desc = desc
+        self.rarity = rarity
+        self.value = value
+        self.icon = pygame.image.load(os.path.join(self.directory, f'Resources/{name}.png'))
+        self.inv_icon = pygame.image.load(os.path.join(self.directory, f'Resources/{name}_inv.png'))
         self.inventoried = inventoried
 
 
@@ -29,8 +35,8 @@ class Tool(Item):
     :int source_id: the type of source that the tool can manipulate
     :return: None
     """
-    def __init__(self, id, map_id, location, size, value, name, icon, inventoried, source_id: int):
-        super().__init__(id, map_id, location, size, value, name, icon, inventoried)
+    def __init__(self, id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried, source_id: int):
+        super().__init__(id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried)
         self.source_id = source_id
 
 class Weapon(Item):
@@ -38,8 +44,8 @@ class Weapon(Item):
     :int modifier: the amount added to stats when this weapon is equipped
     :return: None
     """
-    def __init__(self, id, map_id, location, size, value, name, icon, inventoried, modifier: int):
-        super().__init__(id, map_id, location, size, value, name, icon, inventoried)
+    def __init__(self, id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried, modifier: int):
+        super().__init__(id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried)
         self.modifier = modifier
 
 class Armor(Item):
@@ -47,8 +53,8 @@ class Armor(Item):
     :int modifier: the amount added to stats when this armor is equipped
     :return: None
     """
-    def __init__(self, id, map_id, location, size, value, name, icon, inventoried, modifier: int):
-        super().__init__(id, map_id, location, size, value, name, icon, inventoried)
+    def __init__(self, id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried, modifier: int):
+        super().__init__(id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried)
         self.modifier = modifier
 
 class Potion(Item):
@@ -56,8 +62,8 @@ class Potion(Item):
     :int modifier: the amount added to stats when this Potion is used
     :return: None
     """
-    def __init__(self, id, map_id, location, size, value, name, icon, inventoried, modifier: int):
-        super().__init__(id, map_id, location, size, value, name, icon, inventoried)
+    def __init__(self, id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried, modifier: int):
+        super().__init__(id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried)
         self.modifier = modifier
 
 class Source(Item):
@@ -68,8 +74,8 @@ class Source(Item):
     :int harvest_time: the amount of time it takes to harvest this resource
     :return: None
     """
-    def __init__(self, id, map_id, location, size, value, name, icon, inventoried, child_resource: int, stage: int, regen_days: int, harvest_time: int):
-        super().__init__(id, map_id, location, size, value, name, icon, inventoried)
+    def __init__(self, id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried, child_resource: int, stage: int, regen_days: int, harvest_time: int):
+        super().__init__(id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried)
         self.child_resource = child_resource
         self.stage = stage
         self.regen_days = regen_days
@@ -81,7 +87,7 @@ class Resource(Item):
     :bool is_ingredient: whether the resource is an ingredient for crafting
     :return: None
     """
-    def __init__(self, id, map_id, location, size, value, name, icon, inventoried, parent_source: int, is_ingredient: bool):
-        super().__init__(id, map_id, location, size, value, name, icon, inventoried)
+    def __init__(self, id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried, parent_source: int, is_ingredient: bool):
+        super().__init__(id, directory, map_id, location, size, name, type, desc, rarity, value, inventoried)
         self.parent_source = parent_source
         self.is_ingredient = is_ingredient

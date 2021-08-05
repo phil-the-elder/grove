@@ -51,7 +51,7 @@ class Game:
         coords = [int(db_row[3].split(', ')[0]), int(db_row[3].split(', ')[1])]
         pc_start = [int(db_row[5].split(', ')[0]), int(db_row[5].split(', ')[1])]
         self.screen.fill((0, 0, 0))
-        map = Map.Map(self.dbconn, db_row[1], self.directory, db_row[2], coords, db_row[4], pc_start)
+        map = Map.Map(self.dbconn, db_row[0], db_row[1], self.directory, db_row[2], coords, db_row[4], pc_start)
         if map.dimensions[0] < self.screen_size[0]:
             map.location[0] = (self.screen_size[0] / 2) - (map.dimensions[0] / 2)
         if map.dimensions[1] < self.screen_size[1]:
@@ -157,23 +157,16 @@ class Game:
         ''' Loads the PC on game initialization (TODO: load from database)
         :return: None        
         '''
-        # db_conn = DBManager.DBManager(os.path.join(self.directory, 'Database/main.db'))
-        # main_char = db_conn.get_first_row('MainPC')
-        # INCOMPLETE - HAVE TO REWORK DBMANAGER CLASS TO HANDLE CHARACTER GRAB
-        main_char_icons = {
-            'default': pygame.image.load(os.path.join(self.directory, 'Resources/D2.png')),
-            'W': [pygame.image.load(os.path.join(self.directory, 'Resources/L1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/L3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/L2.png'))],
-            'E': [pygame.image.load(os.path.join(self.directory, 'Resources/R1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/R3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/R2.png'))],
-            'N': [pygame.image.load(os.path.join(self.directory, 'Resources/U1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/U2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/U3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/U2.png'))],
-            'S': [pygame.image.load(os.path.join(self.directory, 'Resources/D1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/D2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/D3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/D2.png'))]
-        }
-        center_position = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
-        main_char = Creature.MainPC(self.directory, 1, 1, center_position, (64, 64), 2, 'flips', main_char_icons, 1, 1, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, [])
-        return main_char
+        # TODO: get inventory from db
+        c = self.dbconn.get_first_row('PC')
+        # coords = [int(c[2].split(', ')[0]), int(c[2].split(', ')[1])]
+        coords = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
+        size = (int(c[3].split(', ')[0]), int(c[3].split(', ')[1]))
+        speed = float(c[4])
+        actions = c[6].split(', ') if c[6] else []
+        pc = Creature.MainPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, c[7], 
+                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], [])
+        return pc
 
     def change_screen(self, new_size):
         """ sets the screen size to a new size

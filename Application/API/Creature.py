@@ -1,10 +1,11 @@
 import pygame
 import random
+import os
 from . import Map, Item
 
 class Creature:
     """ Parent class for all NPCs and monsters, as well as the main character.
-    :str path: filepath to the main game folder
+    :str directory: filepath to the main game folder
     :list location: current location (int x, int y)
     :int map_id: map_id
     :tuple size: size of icon in pixels (int width, int height)
@@ -13,22 +14,41 @@ class Creature:
     :str icon: filepath to graphic for creature
     :return: None
     """
-    def __init__(self, path: str, id: int, map_id: int, location: list, size: tuple, speed: int, name: str, icons: dict):
-        self.path = path
+    def __init__(self, directory: str, id: int, map_id: int, location: list, size: tuple, speed: int, name: str, actions: list):
+        self.directory = directory
         self.id = id
         self.map_id = map_id
         self.location = location
         self.size = size
         self.speed = speed
         self.name = name
-        self.icons = icons
-        self.icon = icons['default']
+        self.icons = self.load_images(actions)
+        self.icon = self.icons['default']
         self.icon_index = 0
         self.is_talking = False
         self.moveup = False
         self.movedown = False
         self.moveleft = False
         self.moveright = False
+
+    def load_images(self, actions):
+        print(self.name)
+        image_dict = {
+            'default': pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}default.png')),
+            'W': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w2.png')),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w2.png'))],
+            'E': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e2.png')),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e2.png'))],
+            'N': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n2.png')),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n2.png'))],
+            'S': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s2.png')),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s2.png'))]
+        }
+        for a in actions:
+            print(a)
+            image_dict[a] = [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}2.png')),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}2.png'))]
+        return image_dict
 
     def move(self, direction: str, ismoving: bool):
         """ moves the creature given a cardinal direction.
@@ -76,14 +96,13 @@ class NPC(Creature):
     :bool wants_to_talk: whether the creature has something to say to PC (red ! if so?)
     :bool is_talking: whether the creature is interacting
     """
-    def __init__(self, path: str, id: int, map_id: int, location: list, size: tuple, speed: int, name: str, icons: dict, bounds: list, move_range: list, wants_to_talk: bool):
-        super().__init__(path, id, map_id, location, size, speed, name, icons)
+    def __init__(self, path: str, id: int, map_id: int, location: list, size: tuple, speed: int, name: str, actions: list, bounds: list, move_range: list, wants_to_talk: bool):
+        super().__init__(path, id, map_id, location, size, speed, name, actions)
         self.bounds = bounds
         self.move_range = move_range
         self.wants_to_talk = wants_to_talk
 
     def action(self, fps, count, index_rate, pc):
-        # self.pc.icon = self.pc.icons[direction][self.pc.icon_index // index_rate]
         if not self.is_talking:
             if count == self.move_range[0]:
                 str_directions = []
@@ -165,10 +184,10 @@ class MainPC(Creature):
     :list inventory: list of integer ids for items in player inventory
     :return: None
     """
-    def __init__(self, path, id, map_id, location, size, speed, name, icons, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
-                    magic: int, farming: int, trading: int, fishing: int, handling: int, head_equip: int, body_equip: int, melee_equip: int,
+    def __init__(self, path, id, map_id, location, size, speed, name, actions, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+                    magic: int, farming: int, trading: int, fishing: int, handling: int, alchemy: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, inventory: list):
-        super().__init__(path, id, map_id, location, size, speed, name, icons)
+        super().__init__(path, id, map_id, location, size, speed, name, actions)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence
@@ -182,6 +201,7 @@ class MainPC(Creature):
         self.trading = trading
         self.fishing = fishing
         self.handling = handling
+        self.alchemy = alchemy
         self.head_equip = head_equip
         self.body_equip = body_equip
         self.melee_equip = melee_equip
@@ -315,10 +335,10 @@ class Monster(NPC):
     :list inventory: inventory for monster
     :return: None
     """
-    def __init__(self, path, id, map_id, location, size, speed, name, icons, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
+    def __init__(self, path, id, map_id, location, size, speed, name, actions, wantstotalk, strength: int, accuracy: int, intelligence: int, dexterity: int, currHP: int, maxHP: int, melee: int, ranged: int,
                     magic: int, head_equip: int, body_equip: int, melee_equip: int,
                     ranged_equip: int, spell_equip: int, difficulty_rating: int, inventory: list):
-        super().__init__(path, id, map_id, location, size, speed, name, icons, wantstotalk)
+        super().__init__(path, id, map_id, location, size, speed, name, actions, wantstotalk)
         self.strength = strength
         self.accuracy = accuracy
         self.intelligence = intelligence

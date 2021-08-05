@@ -71,6 +71,20 @@ class DBManager:
         row = cur.fetchone()
         return row
 
+    def get_associated_items(self, table, field, id):
+        """
+        get a list of rows from a table given a field and a value (e.g. get all items on a map)
+        :string table: table name
+        :string field: table field for id
+        :int id: row id
+        :return: tuple row
+        """
+        sql = f'SELECT * FROM {table} WHERE {field} = {id}'
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        return rows
+
     
     def get_next_id(self, table):
         """

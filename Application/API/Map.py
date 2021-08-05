@@ -1,6 +1,6 @@
 import pygame
 import os
-from . import Item, DBManager, Creature
+from . import Item, Creature
 
 class Block:
     def __init__(self, id: int, location: tuple, size: tuple):
@@ -9,21 +9,14 @@ class Block:
         self.size = size
 
 class Portal:
-    def __init__(self, dbconn, map_id: int, location: tuple, size: tuple, dest_id: int):
-        self.dbconn = dbconn
+    def __init__(self, map_id: int, location: tuple, size: tuple, dest_id: int):
         self.map_id = map_id
         self.location = location
         self.size = size
         self.dest_id = dest_id
 
     def get_map(self):
-        # TODO: use self.map_id to get map info from database
         return self.dest_id
-        # db_row = dbconn.get_row_by_id('Maps', self.dest_id)
-        # coords = [int(db_row[3].split(', ')[0]), int(db_row[3].split(', ')[1])]
-        # pc_start = [int(db_row[5].split(', ')[0]), int(db_row[5].split(', ')[1])]
-        # self.screen.fill((0, 0, 0))
-        # return Map(self.dbconn, db_row[1], self.directory, db_row[2], coords, db_row[4], pc_start)
 
 class Map:
     """ Parent class for the game map
@@ -39,8 +32,9 @@ class Map:
     :list blocks: all impassable areas on the map
     :list creatures: all creatures to be rendered on the map
     """
-    def __init__(self, dbconn, game_id: int, directory: str, image: str, location: list, type: str, pc_start: list):
+    def __init__(self, dbconn, id: int, game_id: int, directory: str, image: str, location: list, type: str, pc_start: list):
         self.dbconn = dbconn
+        self.id = id
         self.game_id = game_id
         self.directory = directory
         self.image_str = image
@@ -52,12 +46,25 @@ class Map:
         self.items = self.load_items()
         self.blocks = self.load_blocks()
         self.creatures = self.load_creatures()
-        self.portals = self.load_portals(dbconn)
+        self.portals = self.load_portals()
 
     def load_creatures(self):
         ''' load all creatures on the map
         :return: list creatures
         '''
+        creature_list = self.dbconn.get_associated_items('NPCs', 'MapID', self.id)
+        formatted_list = []
+        for c in creature_list:
+            coords = [int(c[2].split(', ')[0]), int(c[2].split(', ')[1])]
+            size = (int(c[3].split(', ')[0]), int(c[3].split(', ')[1]))
+            speed = float(c[4])
+            bounds = [int(c[6].split(', ')[0]), int(c[6].split(', ')[1]), int(c[6].split(', ')[2]), int(c[6].split(', ')[3])]
+            move_range = [int(c[7].split(', ')[0]), int(c[7].split(', ')[1])]
+            actions = c[9].split(', ')
+            talk = False if c[8] == 0 else True
+            creature = Creature.NPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, bounds, move_range, talk)
+            formatted_list.append(creature)
+        return formatted_list
         icon_dict = {
             'default': pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
             'W': [pygame.image.load(os.path.join(self.directory, 'Resources/flapsL1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL2.png')),
@@ -93,65 +100,39 @@ class Map:
         ''' load all items on the map
         :return: list items
         '''
-        # db_conn = DBManager.DBManager(os.path.join(self.directory, 'Database/main.db'))
-        # main_char = db_conn.get_first_row('MainPC')
-        # INCOMPLETE - HAVE TO REWORK DBMANAGER CLASS TO HANDLE GETTING ALL ACTIVE ITEMS
-        item_list = [Item.Item(1, 1, [1000,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1100,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1200,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1300,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1400,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1500,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1600,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1700,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1800,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1900,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [2000,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [2100,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [2200,1000], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1000,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1100,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1200,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1300,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1400,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1500,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1600,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1700,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1800,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [1900,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [2000,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [2100,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png')),
-        Item.Item(1, 1, [2200,1100], (24,24), 10, 'trophy', os.path.join(self.directory, 'Resources/trophy.png'), os.path.join(self.directory, 'Resources/trophy_lg.png'))]
-        # item_list = []
-        return item_list
+        item_list = self.dbconn.get_associated_items('Items', 'MapID', self.id)
+        formatted_list = []
+        for i in item_list:
+            item_type = self.dbconn.get_row_by_id('ItemTypes', i[6])
+            coords = [int(i[2].split(', ')[0]), int(i[2].split(', ')[1])]
+            size = (int(i[3].split(', ')[0]), int(i[3].split(', ')[1]))
+            inv = False if i[4] == 0 else True
+            item = Item.Item(i[0], self.directory, i[1], coords, size, i[5], item_type[1], item_type[2], item_type[3], item_type[4], inv)
+            if not inv:
+                formatted_list.append(item)
+        return formatted_list
+
 
     def load_blocks(self):
         ''' load all blocks on the map
         :return: list blocks
         '''
-        # db_conn = DBManager.DBManager(os.path.join(self.directory, 'Database/main.db'))
-        # main_char = db_conn.get_first_row('MainPC')
-        # INCOMPLETE - HAVE TO REWORK DBMANAGER CLASS TO HANDLE GETTING ALL ACTIVE BLOCKS
-        # block_list = [Block([1000,1000], (64,64)),
-        # Block([1100,1000], (64,64)),
-        # Block([1200,1000], (64,64)),
-        # Block([1300,1000], (64,64)),
-        # Block([1400,1000], (64,64)),
-        # Block([1500,1000], (64,64)),
-        # Block([1600,1000], (64,64)),
-        # Block([1700,1000], (64,64)),
-        # Block([1800,1000], (64,64)),
-        # Block([1900,1000], (64,64)),
-        # Block([2000,1000], (64,64)),
-        # Block([2100,1000], (64,64)),
-        # Block([2200,1000], (64,64))
-        # ]
-        block_list = []
-        return block_list
+        block_list = self.dbconn.get_associated_items('Blocks', 'MapID', self.id)
+        formatted_list = []
+        for b in block_list:
+            coords = [int(b[1].split(', ')[0]), int(b[1].split(', ')[1])]
+            size = (int(b[2].split(', ')[0]), int(b[2].split(', ')[1]))
+            formatted_list.append(Block(b[0], coords, size))
+        return formatted_list
     
-    def load_portals(self, conn):
-        portal_list = [Portal(conn, 1, (50, 50), (64, 64), 2)]
-        return portal_list
+    def load_portals(self):
+        portal_list = self.dbconn.get_associated_items('Portals', 'MapID', self.id)
+        formatted_list = []
+        for p in portal_list:
+            coords = [int(p[1].split(', ')[0]), int(p[1].split(', ')[1])]
+            size = (int(p[2].split(', ')[0]), int(p[2].split(', ')[1]))
+            formatted_list.append(Portal(p[3], coords, size, p[4]))
+        return formatted_list
 
     def move(self, index: int, speed: float):
         ''' move the map on player movement

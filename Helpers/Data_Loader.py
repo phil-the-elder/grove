@@ -26,6 +26,7 @@ if data_type in ['creature', 'c']:
     speed = input("Speed: ")
     range = input("Range (format: movestart, actionstart): ")
     inventory = input("Inventory items (format: itemid1, itemid2): ")
+    actions = input("Available Actions (format: action1, action2): ")
     # 2. Monster-specific traits
     if type.lower() in ['m', 'monster']:
         strength = input("Strength: ")
@@ -46,11 +47,11 @@ if data_type in ['creature', 'c']:
         table = 'Monsters'
         creature_type = 'M'
         row = [mapid, location, bounds, range, size, speed, name, strength, accuracy, intelligence, dexterity, currhp, maxhp, melee, ranged,
-                magic, headequip, bodyequip, meleeequip, rangedequip, magicequip, difficulty]
+                magic, headequip, bodyequip, meleeequip, rangedequip, magicequip, difficulty, actions]
     else:
         table = 'NPCs'
         creature_type = 'N'
-        row = [mapid, location, size, speed, name, bounds, range, 0]
+        row = [mapid, location, size, speed, name, bounds, range, 0, actions]
 
 elif data_type in ['block', 'b']:
     print("\nFUCK YOU JONESEY I'M SURPRISED YOU KNOW HOW TO SPELL BLOCK AFTER YOUR STAT LINE THIS SEASON GIVE YOUR BALLS A TUG\n")
@@ -76,7 +77,7 @@ elif data_type in ['item', 'i']:
     mapid = input("Origin Map ID: ")
     name = input("Name: ")
     type  = input("Type (ID): ")
-    row = [location, size, mapid, 0, name, type]
+    row = [mapid, location, size, 0, name, type]
     table = 'Items'
 
 elif data_type in ['item type', 'it']:

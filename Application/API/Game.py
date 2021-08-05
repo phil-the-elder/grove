@@ -37,7 +37,6 @@ class Game:
         self.map = self.load_map(1)
         self.npc_move_count = 0
 
-    # def load_map(self, map: str, coordinates: list, type: str, pc_start: list):
     def load_map(self, id: int):
         """ Loads the Map class with the defined map image at the defined coordinates
         :string directory: filepath to 

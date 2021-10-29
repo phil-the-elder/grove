@@ -229,7 +229,12 @@ class Game:
             return False
 
     def save_game(self, id):
-        pass
+        mapIDs = [i[0] for i in self.dbconn.get_associated_items('Maps', 'GameID', id)]
+        for m in mapIDs:
+            items = self.dbconn.get_associated_items('Items', 'MapID', m)
+            
+        # tables that will update: ItemInventory, Items, Monsters, NPCs, PC
+
 
     def load_game(self, id):
         """ loads a game given a game ID

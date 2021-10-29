@@ -65,36 +65,6 @@ class Map:
             creature = Creature.NPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, bounds, move_range, talk)
             formatted_list.append(creature)
         return formatted_list
-        icon_dict = {
-            'default': pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
-            'W': [pygame.image.load(os.path.join(self.directory, 'Resources/flapsL1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL9.png'))],
-            'E': [pygame.image.load(os.path.join(self.directory, 'Resources/flapsR1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR9.png'))],
-            'N': [pygame.image.load(os.path.join(self.directory, 'Resources/flapsL1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsL8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsL9.png'))],
-            'S': [pygame.image.load(os.path.join(self.directory, 'Resources/flapsR1.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR2.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR3.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR4.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR5.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR6.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR7.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsR8.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsR9.png'))],
-            'action': [pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png')),
-            pygame.image.load(os.path.join(self.directory, 'Resources/flapsstanding.png'))]
-        }
-        creature_list = [Creature.NPC(self.directory, 1, 1, [300, 300], (64, 64), 1, 'flaps', icon_dict, [200, 400, 200, 400], [0, 60], False)]
-        return creature_list
 
     def load_items(self):
         ''' load all items on the map
@@ -120,8 +90,8 @@ class Map:
         block_list = self.dbconn.get_associated_items('Blocks', 'MapID', self.id)
         formatted_list = []
         for b in block_list:
-            coords = [int(b[1].split(', ')[0]), int(b[1].split(', ')[1])]
-            size = (int(b[2].split(', ')[0]), int(b[2].split(', ')[1]))
+            coords = [int(b[2].split(', ')[0]), int(b[2].split(', ')[1])]
+            size = (int(b[3].split(', ')[0]), int(b[3].split(', ')[1]))
             formatted_list.append(Block(b[0], coords, size))
         return formatted_list
     
@@ -129,8 +99,8 @@ class Map:
         portal_list = self.dbconn.get_associated_items('Portals', 'MapID', self.id)
         formatted_list = []
         for p in portal_list:
-            coords = [int(p[1].split(', ')[0]), int(p[1].split(', ')[1])]
-            size = (int(p[2].split(', ')[0]), int(p[2].split(', ')[1]))
+            coords = [int(p[2].split(', ')[0]), int(p[2].split(', ')[1])]
+            size = (int(p[3].split(', ')[0]), int(p[3].split(', ')[1]))
             formatted_list.append(Portal(p[3], coords, size, p[4]))
         return formatted_list
 

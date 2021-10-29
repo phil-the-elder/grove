@@ -25,9 +25,26 @@ class Item:
         self.desc = desc
         self.rarity = rarity
         self.value = value
-        self.icon = pygame.image.load(os.path.join(self.directory, f'Resources/{name}.png'))
-        self.inv_icon = pygame.image.load(os.path.join(self.directory, f'Resources/{name}_inv.png'))
+        self.icons = self.load_images()
+        self.icon = self.icons[0]
+        self.inv_icon = pygame.image.load(os.path.join(self.directory, f'Resources/{name}_inv.png')).convert_alpha()
         self.inventoried = inventoried
+
+    def load_images(self):
+        image_arr = [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}1.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}3.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}2.png')).convert_alpha()]
+
+        return image_arr
+
+    def animate(self, fps, move_count):
+        if 0 <= move_count % fps < 15:
+            self.icon = self.icons[0]
+        elif 15 <= move_count % fps < 30:
+            self.icon = self.icons[1]
+        elif 30 <= move_count % fps < 45:
+            self.icon = self.icons[2]
+        else:
+            self.icon = self.icons[3]
 
 
 class Tool(Item):

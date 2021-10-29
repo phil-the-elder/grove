@@ -7,6 +7,7 @@ from . import Creature, DBManager, Item, Map
 
 class Game:
     """ Parent class for the main Game configurations
+    :int id: game ID
     :tuple screen_size (input): initial screen size (int x, int y)
     :object screen: main game screen
     :bool running: whether the game is running
@@ -20,21 +21,22 @@ class Game:
     :str corner_icon (input): filepath for corner icon 
     :int fps (input): game framerate
     """
-    def __init__(self, screen_size: tuple, name: str, directory: str, corner_icon: str, fps: int):
+    def __init__(self, id, screen_size: tuple, name: str, directory: str, corner_icon: str, fps: int):
+        self.id = id
         self.dbconn = DBManager.DBManager(os.path.join(directory, 'Database/main.db'))
         self.screen_size = screen_size
         self.directory = directory
         self.screen = pygame.display.set_mode(screen_size, RESIZABLE)
         self.running = True
         self.start_game(name, os.path.join(directory, corner_icon))
-        self.pc = self.load_character()
+        self.pc = self.load_character(self.id)
         self.dialog = False
-        self.dialog_img = pygame.image.load(os.path.join(directory, 'Resources/dialog.png'))
+        self.dialog_img = pygame.image.load(os.path.join(directory, 'Resources/dialog.png')).convert()
         self.inventory = False
-        self.inventory_img = pygame.image.load(os.path.join(directory, 'Resources/inventory.png'))
+        self.inventory_img = pygame.image.load(os.path.join(directory, 'Resources/inventory.png')).convert()
         self.fps = fps
         self.clock = pygame.time.Clock()
-        self.map = self.load_map(1)
+        self.map = self.load_map(self.id)
         self.npc_move_count = 0
 
     def load_map(self, id: int):
@@ -46,7 +48,10 @@ class Game:
         :tuple pc_start: the pc's starting location for that map
         :return: None
         """
-        db_row = self.dbconn.get_row_by_id('Maps', id)
+        possible_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
+        for map in possible_maps:
+            if map[6] == 1:
+                db_row = self.dbconn.get_row_by_id('Maps', map[0])
         coords = [int(db_row[3].split(', ')[0]), int(db_row[3].split(', ')[1])]
         pc_start = [int(db_row[5].split(', ')[0]), int(db_row[5].split(', ')[1])]
         self.screen.fill((0, 0, 0))
@@ -132,6 +137,7 @@ class Game:
         self.screen.blit(self.map.image, tuple(self.map.location)) 
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
         for item in self.map.items:
+            item.animate(self.fps, self.npc_move_count)
             self.screen.blit(item.icon, tuple(item.location))
         for creature in self.map.creatures:
             npc_index_rate = self.get_index_rate(creature.icons['E'], creature.speed)
@@ -152,19 +158,28 @@ class Game:
         pygame.display.update()
 
 
-    def load_character(self):
-        ''' Loads the PC on game initialization (TODO: load from database)
+    def load_character(self, game_id: int):
+        ''' Loads the PC on game initialization
         :return: None        
         '''
-        # TODO: get inventory from db
-        c = self.dbconn.get_first_row('PC')
+        c = self.dbconn.get_row_by_id('PC', game_id)
         # coords = [int(c[2].split(', ')[0]), int(c[2].split(', ')[1])]
         coords = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
         size = (int(c[3].split(', ')[0]), int(c[3].split(', ')[1]))
         speed = float(c[4])
         actions = c[6].split(', ') if c[6] else []
-        pc = Creature.MainPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, c[7], 
-                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], [])
+        inventory_ids = [s[2] for s in self.dbconn.get_associated_items('ItemInventory', 'CreatureID', c[0])]
+        inventory = []
+        for id in inventory_ids:
+            i = self.dbconn.get_row_by_id('Items', id)
+            item_type = self.dbconn.get_row_by_id('ItemTypes', i[6])
+            coords = [int(i[2].split(', ')[0]), int(i[2].split(', ')[1])]
+            size = (int(i[3].split(', ')[0]), int(i[3].split(', ')[1]))
+            inv = False if i[4] == 0 else True
+            item = Item.Item(i[0], self.directory, i[1], coords, size, i[5], item_type[1], item_type[2], item_type[3], item_type[4], inv)
+            inventory.append(item)
+        pc = Creature.MainPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, c[7],
+                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], inventory)
         return pc
 
     def change_screen(self, new_size):
@@ -175,6 +190,88 @@ class Game:
         self.screen_size = new_size
         self.load_map(self.map.image_str, self.map.location, self.map.type, self.map.pc_start)
         self.screen.blit(self.map.image, tuple(self.map.location))
+
+
+    def new_game(self):
+        """ creates a new game by copying records from the template db and mapping necessary items
+        return: bool success
+        """
+        try:
+            game_count = self.dbconn.get_row_count('Games')
+            if game_count >= 3:
+                self.open_dialog('There are already three saved games! Delete a game to create a new one')
+            else:
+                new_map_id = self.dbconn.get_next_id('Maps')
+                new_game_id = self.dbconn.get_next_id('Games')
+                self.dbconn.insert_row('Games', [new_game_id])
+                template_connection = DBManager.DBManager(os.path.join(self.directory, 'Database/template.db'))
+                template_maps = template_connection.get_all_rows('Maps')
+                for map in template_maps:
+                    map = list(map)
+                    map[1] = new_game_id
+                    old_id = map[0]
+                    tables_to_update = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
+                    for table in tables_to_update:
+                        template_rows = template_connection.get_associated_items(table, 'MapID', old_id)
+                        new_item_id = self.dbconn.get_next_id(table)
+                        for item in template_rows:
+                            item = list(item)
+                            item[0] = new_item_id
+                            item[1] = new_map_id
+                            self.dbconn.insert_row(table, item)
+                            new_item_id += 1
+                    map[0] = new_map_id
+                    self.dbconn.insert_row('Maps', map)
+                    new_map_id += 1  
+                return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def save_game(self, id):
+        pass
+
+    def load_game(self, id):
+        """ loads a game given a game ID
+        :int id: game ID
+        return: bool success
+        """
+        try:
+            self.id = id
+            self.pc = self.load_character(self.id)
+            self.dialog = False
+            self.inventory = False
+            self.clock = pygame.time.Clock()
+            self.map = self.load_map(self.id)
+            self.npc_move_count = 0
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def delete_game(self, id):
+        """ deletes a game, associated maps, and all associated items and creatures given an id
+        :int id: game ID
+        return: bool success
+        """
+        try:
+            associated_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
+            for map in associated_maps:
+                print(map)
+                tables_to_delete = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
+                for table in tables_to_delete:
+                    rows_to_delete = [r[0] for r in self.dbconn.get_associated_items(table, 'MapID', map[0])]
+                    self.dbconn.delete_rows(table, rows_to_delete)
+                    if table == 'PC' and len(rows_to_delete) > 0:
+                        pc_id = rows_to_delete[0]
+                        self.dbconn.delete_rows('ItemInventory', [pc_id], 'CreatureID')
+                self.dbconn.delete_rows('Maps', [map[0]])
+            self.dbconn.delete_rows('Games', [id])
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
 
     def handle_event(self, event):
         """ main event handler for all key, mouse interactions 
@@ -202,6 +299,14 @@ class Game:
             if event.key == pygame.K_q:
                 self.open_inventory()
                 return True
+            if event.key == pygame.K_1:
+                self.new_game()
+            if event.key == pygame.K_2:
+                self.save_game()
+            if event.key == pygame.K_3:
+                self.load_game(2 if self.id == 1 else 1)
+            if event.key == pygame.K_4:
+                self.delete_game(4)
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_w:
                 self.pc.move('N', False)

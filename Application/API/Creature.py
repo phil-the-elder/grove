@@ -32,22 +32,21 @@ class Creature:
         self.moveright = False
 
     def load_images(self, actions):
-        print(self.name)
         image_dict = {
-            'default': pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}default.png')),
-            'W': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w2.png')),
-            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w2.png'))],
-            'E': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e2.png')),
-            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e2.png'))],
-            'N': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n2.png')),
-            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n2.png'))],
-            'S': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s2.png')),
-            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s2.png'))]
+            'default': pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}default.png')).convert_alpha(),
+            'W': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w1.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w3.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}w2.png')).convert_alpha()],
+            'E': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e1.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e3.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}e2.png')).convert_alpha()],
+            'N': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n1.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n3.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}n2.png')).convert_alpha()],
+            'S': [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s1.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s3.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}s2.png')).convert_alpha()]
         }
         for a in actions:
             print(a)
-            image_dict[a] = [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}1.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}2.png')),
-            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}3.png')),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}2.png'))]
+            image_dict[a] = [pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}1.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}2.png')).convert_alpha(),
+            pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}3.png')).convert_alpha(),pygame.image.load(os.path.join(self.directory, f'Resources/{self.name}{a}2.png')).convert_alpha()]
         return image_dict
 
     def move(self, direction: str, ismoving: bool):

@@ -71,6 +71,30 @@ class DBManager:
         row = cur.fetchone()
         return row
 
+    def get_all_rows(self, table):
+        """
+        Get all rows from a table
+        :string table: table name
+        :return: tuple of tuples rows
+        """
+        sql = f'SELECT * FROM {table}'
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        return rows
+
+    def get_row_count(self, table):
+        """
+        Get a count of all rows in table
+        :string table: table name
+        :return: int row count
+        """
+        sql = f'SELECT * FROM {table}'
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        return len(rows)
+
     def get_associated_items(self, table, field, id):
         """
         get a list of rows from a table given a field and a value (e.g. get all items on a map)
@@ -107,10 +131,10 @@ class DBManager:
         :tuple row: tuple row values
         :return: int row id
         """
-
-        sql = f'INSERT INTO {table}({",".join(self.get_colnames(table))}) VALUES{row}'
+        insert_str = f'({",".join(["?" for i in row])})'
+        sql = f'INSERT INTO {table}({",".join(self.get_colnames(table))}) VALUES{insert_str}'
         cur = self.conn.cursor()
-        cur.execute(sql)
+        cur.execute(sql, row)
         self.conn.commit()
 
         return cur.lastrowid
@@ -131,21 +155,23 @@ class DBManager:
         self.conn.commit()
         return id
 
-    def delete_rows(self, table, ids):
+    def delete_rows(self, table, ids, custom_field=None):
         """
         Delete a row given its id
         :string table: string table name
         :int id: list (int) ids
+        :custom_field: string non-id field to check against (optional, default None)
         :return: None
         """
-        if ids[0] == '*':
+        field = custom_field if custom_field else 'id'
+        if len(ids) > 0 and ids[0] == '*':
             sql = f'DELETE FROM {table}'
             cur = self.conn.cursor()
             cur.execute(sql)
             self.conn.commit()
         else:
             for id in ids:
-                sql = f'DELETE FROM {table} WHERE id = {id}'
+                sql = f'DELETE FROM {table} WHERE {field} = {id}'
                 cur = self.conn.cursor()
                 cur.execute(sql)
                 self.conn.commit()
@@ -161,7 +187,8 @@ class DBManager:
 
 
 # # Testing Section
-# db = DBManager(r'F:\Phil Elder\Projects\Python\grove\Testing\saves.db')
+# db = DBManager(r'C:\Projects\grove\Application\Database\main.db')
+# print(db.get_row_count('Items'))
 
 # fields = [{
 #     'name': 'id',

@@ -46,7 +46,27 @@ class Map:
         self.items = self.load_items()
         self.blocks = self.load_blocks()
         self.creatures = self.load_creatures()
+        self.monsters = self.load_monsters()
         self.portals = self.load_portals()
+
+    def load_monsters(self):
+        ''' load all monsters on the map
+        :return: list monsters
+        '''
+        monster_list = self.dbconn.get_associated_items('Monsters', 'MapID', self.id)
+        formatted_list = []
+        for c in monster_list:
+            coords = [float(c[2].split(', ')[0]), float(c[2].split(', ')[1])]
+            size = (int(c[3].split(', ')[0]), int(c[3].split(', ')[1]))
+            speed = float(c[4])
+            bounds = [int(c[6].split(', ')[0]), int(c[6].split(', ')[1]), int(c[6].split(', ')[2]), int(c[6].split(', ')[3])]
+            move_range = [int(c[7].split(', ')[0]), int(c[7].split(', ')[1])]
+            actions = c[9].split(', ')
+            talk = False if c[8] == 0 else True
+            monster = Creature.Monster(self.directory, c[0], c[1], coords, size, speed, c[5], actions, bounds, move_range, talk, 
+                                        c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], [])
+            formatted_list.append(monster)
+        return formatted_list
 
     def load_creatures(self):
         ''' load all creatures on the map
@@ -55,7 +75,7 @@ class Map:
         creature_list = self.dbconn.get_associated_items('NPCs', 'MapID', self.id)
         formatted_list = []
         for c in creature_list:
-            coords = [int(c[2].split(', ')[0]), int(c[2].split(', ')[1])]
+            coords = [float(c[2].split(', ')[0]), float(c[2].split(', ')[1])]
             size = (int(c[3].split(', ')[0]), int(c[3].split(', ')[1]))
             speed = float(c[4])
             bounds = [int(c[6].split(', ')[0]), int(c[6].split(', ')[1]), int(c[6].split(', ')[2]), int(c[6].split(', ')[3])]
@@ -74,7 +94,7 @@ class Map:
         formatted_list = []
         for i in item_list:
             item_type = self.dbconn.get_row_by_id('ItemTypes', i[6])
-            coords = [int(i[2].split(', ')[0]), int(i[2].split(', ')[1])]
+            coords = [float(i[2].split(', ')[0]), float(i[2].split(', ')[1])]
             size = (int(i[3].split(', ')[0]), int(i[3].split(', ')[1]))
             inv = False if i[4] == 0 else True
             item = Item.Item(i[0], self.directory, i[1], coords, size, i[5], item_type[1], item_type[2], item_type[3], item_type[4], inv)
@@ -90,7 +110,7 @@ class Map:
         block_list = self.dbconn.get_associated_items('Blocks', 'MapID', self.id)
         formatted_list = []
         for b in block_list:
-            coords = [int(b[2].split(', ')[0]), int(b[2].split(', ')[1])]
+            coords = [float(b[2].split(', ')[0]), float(b[2].split(', ')[1])]
             size = (int(b[3].split(', ')[0]), int(b[3].split(', ')[1]))
             formatted_list.append(Block(b[0], coords, size))
         return formatted_list
@@ -99,7 +119,7 @@ class Map:
         portal_list = self.dbconn.get_associated_items('Portals', 'MapID', self.id)
         formatted_list = []
         for p in portal_list:
-            coords = [int(p[2].split(', ')[0]), int(p[2].split(', ')[1])]
+            coords = [float(p[2].split(', ')[0]), float(p[2].split(', ')[1])]
             size = (int(p[3].split(', ')[0]), int(p[3].split(', ')[1]))
             formatted_list.append(Portal(p[3], coords, size, p[4]))
         return formatted_list

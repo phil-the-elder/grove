@@ -100,6 +100,7 @@ class NPC(Creature):
         self.bounds = bounds
         self.move_range = move_range
         self.wants_to_talk = wants_to_talk
+        self.inventory = []
 
     def action(self, fps, count, index_rate, pc):
         if not self.is_talking:
@@ -215,8 +216,8 @@ class MainPC(Creature):
         :return: None
         """
         if isinstance(thing, Item.Item):
-            game.map.items.remove(thing)
             self.inventory.append(thing)
+            thing.inventoried = True
         elif isinstance(thing, NPC):
             if not thing.moveleft and not thing.moveright and not thing.moveup and not thing.movedown:
                 self.is_talking = not self.is_talking

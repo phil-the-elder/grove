@@ -75,8 +75,17 @@ class Game:
         for map in self.maps:
             if map.id == map_id:
                 self.screen.fill((0, 0, 0))
+                self.transition_maps()
                 self.pc.location = map.pc_start
                 return map
+
+
+    def transition_maps(self):
+        self.pc.is_talking = True
+        stages = 24
+        for i in range(stages):
+            self.screen.fill((0, 0, 0)) # attach to update display?
+        return
 
     
     def start_game(self, name: str, corner_icon: str):
@@ -90,7 +99,8 @@ class Game:
         icon = pygame.image.load(corner_icon)
         pygame.display.set_icon(icon)
 
-    def movement_handler(self, blockers: list, char_limit: float, char_relate, map_limit: float, map_relate, pos_index: int, range_index: int, direction: str, speed: float, index_rate: int, add_dimensions: bool):
+    def movement_handler(self, blockers: list, char_limit: float, char_relate, map_limit: float, map_relate, pos_index: int, 
+                            range_index: int, direction: str, speed: float, index_rate: int, add_dimensions: bool):
         """ Handles the main movement mechanic for the PC
         :list blockers: list of unpassable rectangular objects
         :float char_limit: the limit the pc can move in a certain direction (usually the game screen boundary)
@@ -143,11 +153,13 @@ class Game:
         if self.pc.moveup:
             self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 1, 0, 'N', 0 - self.pc.speed, index_rate, True)
         if self.pc.movedown:
-            self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
+            self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), 
+                                    operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
         if self.pc.moveleft:
             self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 0, 1, 'W', 0 - self.pc.speed, index_rate, True)
         if self.pc.moveright:
-            self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
+            self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), 
+                                    operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
         # blit the map, pc location, items, and if necessary the dialog box or inventory
         self.screen.blit(self.map.image, tuple(self.map.location)) 
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
@@ -194,7 +206,8 @@ class Game:
             item = Item.Item(i[0], self.directory, i[1], coords, size, i[5], item_type[1], item_type[2], item_type[3], item_type[4], inv)
             inventory.append(item)
         pc = Creature.MainPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, c[7],
-                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], inventory)
+                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], 
+                                c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], inventory)
         return pc
 
     def change_screen(self, new_size):
@@ -394,8 +407,6 @@ class Game:
             if event.key == pygame.K_e:
                 self.check_interact(self.pc.direction)
                 return True
-            # if event.key == pygame.K_m:
-            #     self.map = self.load_map('Resources/map_2.png', [0, 0], 'dynamic', [50, 200])
             if event.key == pygame.K_q:
                 self.open_inventory()
                 return True
@@ -449,6 +460,7 @@ class Game:
         if not interact_obj:
             self.open_dialog('Hmmm... nothing to see here...')
         else:
+            self.pc.is_talking = not self.pc.is_talking
             self.pc.interact(self, interact_obj)
 
 

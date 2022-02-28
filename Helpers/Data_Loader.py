@@ -46,8 +46,8 @@ if data_type in ['creature', 'c']:
         magicequip = input("Magic Equipped Item (by item id): ")
         table = 'Monsters'
         creature_type = 'M'
-        row = [mapid, location, bounds, range, size, speed, name, strength, accuracy, intelligence, dexterity, currhp, maxhp, melee, ranged,
-                magic, headequip, bodyequip, meleeequip, rangedequip, magicequip, difficulty, actions]
+        row = [mapid, location, bounds, range, size, speed, name, actions, strength, accuracy, intelligence, dexterity, currhp, maxhp, melee, ranged,
+                magic, headequip, bodyequip, meleeequip, rangedequip, magicequip, difficulty]
     else:
         table = 'NPCs'
         creature_type = 'N'
@@ -113,7 +113,7 @@ try:
             conn.insert_row('ItemInventory', (result_id, creature_type, i))
     input(f'THAT WORKED YOUR NEW ITEM ID IS {result_id} NOW HIT ENTER YOUR WIZARD COMMANDS YOU')
 except Exception as e:
-    input(f"I FUCKING KNEW YOU'D DROP THE SHOT THIS IS WHAT HAPPENED: {e}. DO BETTER NEXT TIME.")
+    input(f"FUCK YOU REILLY I FUCKING KNEW YOU'D DROP THE SHOT THIS IS WHAT HAPPENED: \n{e}.\n DO BETTER NEXT TIME.")
 
 
 

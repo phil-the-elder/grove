@@ -1,0 +1,9 @@
+﻿Create preliminary town map,LoE: 80 hours,,,
+Create list of datapoints required in database on Save action,,,engine,Phil Elder
+Create Delete Game function,,,engine,Phil Elder
+"Create Load Game function, dialog",,,engine,Phil Elder
+Create Save Game function,,,engine,Phil Elder
+"Create New Game function, dialog",,,engine,Phil Elder
+Change Load PC function to load from database,,,engine,Phil Elder
+Add animation capacity to Item class,,,engine,Phil Elder
+"BUG: load_map takes game ID, but loads map ID",,,"engine, bug",

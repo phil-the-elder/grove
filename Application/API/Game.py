@@ -1,6 +1,7 @@
 import pygame
 import os
 import operator
+import time
 
 from pygame.constants import RESIZABLE
 from . import Creature, DBManager, Item, Map
@@ -36,32 +37,54 @@ class Game:
         self.inventory_img = pygame.image.load(os.path.join(directory, 'Resources/inventory.png')).convert()
         self.fps = fps
         self.clock = pygame.time.Clock()
-        self.map = self.load_map(self.id)
+        self.maps = self.load_all_maps()
+        self.map = self.load_map(self.id, True)
         self.npc_move_count = 0
 
-    def load_map(self, id: int):
-        """ Loads the Map class with the defined map image at the defined coordinates
-        :string directory: filepath to 
-        :string map: filepath to the map image
-        :list coordinates: x/y coordinates of the top left corner of rendered map
-        :string type: type of map
-        :tuple pc_start: the pc's starting location for that map
-        :return: None
+        self.veil_alpha = 0
+        self.veil = pygame.Surface((self.screen_size[0], self.screen_size[1]))
+        self.veil.fill((0, 0, 0))
+        self.veil.set_alpha(self.veil_alpha)
+        self.fade_out = False
+        self.fade_in = False
+        self.transition_map = None
+
+    def load_all_maps(self):
+        """ Loads and processes all maps associated with the game, given the Game ID
+        :return: list of object Maps
         """
-        possible_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
-        for map in possible_maps:
-            if map[6] == 1:
-                db_row = self.dbconn.get_row_by_id('Maps', map[0])
-        coords = [int(db_row[3].split(', ')[0]), int(db_row[3].split(', ')[1])]
-        pc_start = [int(db_row[5].split(', ')[0]), int(db_row[5].split(', ')[1])]
-        self.screen.fill((0, 0, 0))
-        map = Map.Map(self.dbconn, db_row[0], db_row[1], self.directory, db_row[2], coords, db_row[4], pc_start)
-        if map.dimensions[0] < self.screen_size[0]:
-            map.location[0] = (self.screen_size[0] / 2) - (map.dimensions[0] / 2)
-        if map.dimensions[1] < self.screen_size[1]:
-            map.location[1] = (self.screen_size[1] / 2) - (map.dimensions[1] / 2)
-        self.pc.location = map.pc_start
-        return map
+        return_array = []
+        db_maps = self.dbconn.get_associated_items('Maps', 'GameID', self.id)
+        for m in db_maps:
+            coords = [float(m[3].split(', ')[0]), float(m[3].split(', ')[1])]
+            pc_start = [int(m[5].split(', ')[0]), int(m[5].split(', ')[1])]
+            map = Map.Map(self.dbconn, m[0], m[1], self.directory, m[2], coords, m[4], pc_start)
+            if map.dimensions[0] < self.screen_size[0]:
+                map.location[0] = (self.screen_size[0] / 2) - (map.dimensions[0] / 2)
+            if map.dimensions[1] < self.screen_size[1]:
+                map.location[1] = (self.screen_size[1] / 2) - (map.dimensions[1] / 2)
+            return_array.append(map)
+        return return_array
+
+
+    def load_map(self, id: int, is_init=False):
+        """ Loads the Map class with the game ID (loads default map) or map ID
+        :int id: game ID if is_init else map ID
+        :bool is_init: Is initial map (true if loading game, false if loading map)(optional: default False)
+        :return: object Map
+        """
+        if is_init:
+            possible_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
+            for map in possible_maps:
+                if map[6] == 1:
+                    map_id = map[0]
+        else:
+            map_id = id
+        for map in self.maps:
+            if map.id == map_id:
+                self.screen.fill((0, 0, 0))
+                self.pc.location = map.pc_start
+                return map
 
     
     def start_game(self, name: str, corner_icon: str):
@@ -75,7 +98,8 @@ class Game:
         icon = pygame.image.load(corner_icon)
         pygame.display.set_icon(icon)
 
-    def movement_handler(self, blockers: list, char_limit: float, char_relate, map_limit: float, map_relate, pos_index: int, range_index: int, direction: str, speed: float, index_rate: int, add_dimensions: bool):
+    def movement_handler(self, blockers: list, char_limit: float, char_relate, map_limit: float, map_relate, pos_index: int, 
+                            range_index: int, direction: str, speed: float, index_rate: int, add_dimensions: bool):
         """ Handles the main movement mechanic for the PC
         :list blockers: list of unpassable rectangular objects
         :float char_limit: the limit the pc can move in a certain direction (usually the game screen boundary)
@@ -92,7 +116,11 @@ class Game:
         """
         interact_obj = self.pc.check_surroundings(blockers, pos_index, range_index, add_dimensions)
         if type(interact_obj) == Map.Portal:
-            self.map = self.load_map(interact_obj.get_map())
+            self.fade_out = True
+            self.transition_map = interact_obj.get_map()
+            # self.fade('out', interact_obj.get_map())
+            # self.map = self.load_map(interact_obj.get_map())
+            # self.fade('in')
         elif not interact_obj:
             if char_relate(self.pc.location[pos_index], self.screen_size[pos_index] / 2 - 32) and char_relate(self.pc.location[pos_index], char_limit):
                 self.pc.location[pos_index] += speed
@@ -103,8 +131,10 @@ class Game:
         self.pc.direction = direction
         self.pc.icon = self.pc.icons[direction][self.pc.icon_index // index_rate]
 
+
     def get_index_rate(self, icons, speed):
         return self.fps // len(icons) * int(1/speed * 2)
+
 
     def update_display(self):
         ''' Main function to update the map display
@@ -128,17 +158,22 @@ class Game:
         if self.pc.moveup:
             self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 1, 0, 'N', 0 - self.pc.speed, index_rate, True)
         if self.pc.movedown:
-            self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
+            self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), 
+                                    operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
         if self.pc.moveleft:
             self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 0, 1, 'W', 0 - self.pc.speed, index_rate, True)
         if self.pc.moveright:
-            self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
+            self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), 
+                                    operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
         # blit the map, pc location, items, and if necessary the dialog box or inventory
         self.screen.blit(self.map.image, tuple(self.map.location)) 
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
+
+
         for item in self.map.items:
             item.animate(self.fps, self.npc_move_count)
-            self.screen.blit(item.icon, tuple(item.location))
+            if not item.inventoried:
+                self.screen.blit(item.icon, tuple(item.location))
         for creature in self.map.creatures:
             npc_index_rate = self.get_index_rate(creature.icons['E'], creature.speed)
             creature.action(self.fps, self.npc_move_count, npc_index_rate, self.pc)
@@ -155,6 +190,22 @@ class Game:
                 self.screen.blit(item.inv_icon, (inv_x, inv_y))
                 inv_x += self.inventory_img.get_width() / 9
         self.npc_move_count += 1
+
+        if self.fade_out:
+            self.veil_alpha += 5
+            if self.veil_alpha >= 255:
+                self.fade_out = False
+                self.map = self.load_map(self.transition_map)
+                self.fade_in = True
+        elif self.fade_in:
+            self.veil_alpha -= 5
+            if self.veil_alpha <= 0:
+                self.fade_in = False
+                self.transition_map = None
+
+        self.veil.set_alpha(self.veil_alpha)
+        self.screen.blit(self.veil, (0, 0))
+
         pygame.display.update()
 
 
@@ -163,7 +214,6 @@ class Game:
         :return: None        
         '''
         c = self.dbconn.get_row_by_id('PC', game_id)
-        # coords = [int(c[2].split(', ')[0]), int(c[2].split(', ')[1])]
         coords = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
         size = (int(c[3].split(', ')[0]), int(c[3].split(', ')[1]))
         speed = float(c[4])
@@ -173,13 +223,14 @@ class Game:
         for id in inventory_ids:
             i = self.dbconn.get_row_by_id('Items', id)
             item_type = self.dbconn.get_row_by_id('ItemTypes', i[6])
-            coords = [int(i[2].split(', ')[0]), int(i[2].split(', ')[1])]
+            coords = [float(i[2].split(', ')[0]), float(i[2].split(', ')[1])]
             size = (int(i[3].split(', ')[0]), int(i[3].split(', ')[1]))
             inv = False if i[4] == 0 else True
             item = Item.Item(i[0], self.directory, i[1], coords, size, i[5], item_type[1], item_type[2], item_type[3], item_type[4], inv)
             inventory.append(item)
         pc = Creature.MainPC(self.directory, c[0], c[1], coords, size, speed, c[5], actions, c[7],
-                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], inventory)
+                                c[8], c[9], c[10], c[11], c[12], c[13], c[14], c[15], c[16], c[17], 
+                                c[18], c[19], c[20], c[21], c[22], c[23], c[24], c[25], inventory)
         return pc
 
     def change_screen(self, new_size):
@@ -188,7 +239,7 @@ class Game:
         :return: None
         """
         self.screen_size = new_size
-        self.load_map(self.map.image_str, self.map.location, self.map.type, self.map.pc_start)
+        self.load_map(self.map.id)
         self.screen.blit(self.map.image, tuple(self.map.location))
 
 
@@ -196,45 +247,122 @@ class Game:
         """ creates a new game by copying records from the template db and mapping necessary items
         return: bool success
         """
+        # try:
+        game_count = self.dbconn.get_row_count('Games')
+        if game_count >= 3:
+            self.open_dialog('There are already three saved games! Delete a game to create a new one')
+        else:
+            new_map_id = self.dbconn.get_next_id('Maps')
+            new_game_id = self.dbconn.get_next_id('Games')
+            self.dbconn.insert_row('Games', [new_game_id])
+            template_connection = DBManager.DBManager(os.path.join(self.directory, 'Database/template.db'))
+            template_maps = template_connection.get_all_rows('Maps')
+            for map in template_maps:
+                map = list(map)
+                map[1] = new_game_id
+                old_id = map[0]
+                tables_to_update = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
+                for table in tables_to_update:
+                    template_rows = template_connection.get_associated_items(table, 'MapID', old_id)
+                    new_item_id = self.dbconn.get_next_id(table)
+                    for item in template_rows:
+                        item = list(item)
+                        item[0] = new_item_id
+                        item[1] = new_map_id
+                        self.dbconn.insert_row(table, item)
+                        new_item_id += 1
+                map[0] = new_map_id
+                self.dbconn.insert_row('Maps', map)
+                new_map_id += 1  
+            return True
+        # except Exception as e:
+        #     print(e)
+        #     return False
+
+    def save_game(self, id):
+        """ save a game given a game ID
+        :int id: game ID
+        return: bool success
+        """
         try:
-            game_count = self.dbconn.get_row_count('Games')
-            if game_count >= 3:
-                self.open_dialog('There are already three saved games! Delete a game to create a new one')
-            else:
-                new_map_id = self.dbconn.get_next_id('Maps')
-                new_game_id = self.dbconn.get_next_id('Games')
-                self.dbconn.insert_row('Games', [new_game_id])
-                template_connection = DBManager.DBManager(os.path.join(self.directory, 'Database/template.db'))
-                template_maps = template_connection.get_all_rows('Maps')
-                for map in template_maps:
-                    map = list(map)
-                    map[1] = new_game_id
-                    old_id = map[0]
-                    tables_to_update = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
-                    for table in tables_to_update:
-                        template_rows = template_connection.get_associated_items(table, 'MapID', old_id)
-                        new_item_id = self.dbconn.get_next_id(table)
-                        for item in template_rows:
-                            item = list(item)
-                            item[0] = new_item_id
-                            item[1] = new_map_id
-                            self.dbconn.insert_row(table, item)
-                            new_item_id += 1
-                    map[0] = new_map_id
-                    self.dbconn.insert_row('Maps', map)
-                    new_map_id += 1  
-                return True
+            for map in self.maps:
+                for item in map.items:
+                    inventoried = 1 if item.inventoried else 0
+                    item_dict = {
+                        'MapID': item.map_id,
+                        'Location': ', '.join([str(i) for i in item.location]),
+                        'Inventoried': inventoried
+                    }
+                    self.dbconn.update_row('Items', item.id, item_dict)
+                for creature in map.creatures:
+                    c_dict = {
+                        'MapID': creature.map_id,
+                        'Location': ', '.join([str(c) for c in creature.location]),
+                        'Speed': creature.speed
+                    }
+                    self.save_creature(creature, 'NPCs', c_dict)
+                for monster in map.monsters:
+                    m_dict = {
+                        'MapID': monster.map_id,
+                        'Location': ', '.join([str(l) for l in monster.location]),
+                        'Speed': monster.speed,
+                        'HeadEquip': monster.head_equip,
+                        'BodyEquip': monster.body_equip,
+                        'MeleeEquip': monster.melee_equip,
+                        'RangedEquip': monster.ranged_equip,
+                        'SpellEquip': monster.spell_equip
+                    }
+                    self.save_creature(monster, 'Monsters', m_dict)
+                
+            p = self.pc
+            p_dict = {
+                'Size': ', '.join([str(p) for p in p.size]),
+                'Speed': p.speed,
+                'Name': p.name,
+                'Strength': p.strength,
+                'Accuracy': p.accuracy,
+                'Intelligence': p.intelligence,
+                'Dexterity': p.dexterity,
+                'CurrHP': p.currHP,
+                'MaxHP': p.maxHP,
+                'Melee': p.melee,
+                'Ranged': p.ranged,
+                'Magic': p.magic,
+                'Farming': p.farming,
+                'Trading': p.trading,
+                'Fishing': p.fishing,
+                'Handling': p.handling,
+                'Alchemy': p.alchemy,
+                'HeadEquip': p.head_equip,
+                'BodyEquip': p.body_equip,
+                'MeleeEquip': p.melee_equip,
+                'RangedEquip': p.ranged_equip,
+                'SpellEquip': p.spell_equip
+            }
+            self.save_creature(p, 'PC', p_dict)
+            return True
         except Exception as e:
             print(e)
             return False
 
-    def save_game(self, id):
-        mapIDs = [i[0] for i in self.dbconn.get_associated_items('Maps', 'GameID', id)]
-        for m in mapIDs:
-            items = self.dbconn.get_associated_items('Items', 'MapID', m)
-            
-        # tables that will update: ItemInventory, Items, Monsters, NPCs, PC
-
+    def save_creature(self, creature_obj, table, row):
+        """ sub-function of save_game for saving PC, NPCs and monsters
+        :obj creature: Creature object to save
+        :str table: table name to save to
+        :dict row: dictionary containing fields, values to update for the row
+        return: bool success
+        """
+        db_inventory_ids = [s[2] for s in self.dbconn.get_associated_items('ItemInventory', 'CreatureID', creature_obj.id)]
+        pc_inventory_ids = [s.id for s in creature_obj.inventory]
+        rows_to_delete = []
+        for i in db_inventory_ids:
+            if i not in pc_inventory_ids:
+                rows_to_delete.append(i)
+        self.dbconn.delete_rows('ItemInventory', rows_to_delete, 'ItemID')
+        for p in pc_inventory_ids:
+            if p not in db_inventory_ids:
+                self.dbconn.insert_row('ItemInventory', [creature_obj.id, 'P', p])
+        self.dbconn.update_row(table, creature_obj.id, row)
 
     def load_game(self, id):
         """ loads a game given a game ID
@@ -247,7 +375,8 @@ class Game:
             self.dialog = False
             self.inventory = False
             self.clock = pygame.time.Clock()
-            self.map = self.load_map(self.id)
+            self.maps = self.load_all_maps()
+            self.map = self.load_map(self.id, True)
             self.npc_move_count = 0
             return True
         except Exception as e:
@@ -262,7 +391,6 @@ class Game:
         try:
             associated_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
             for map in associated_maps:
-                print(map)
                 tables_to_delete = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
                 for table in tables_to_delete:
                     rows_to_delete = [r[0] for r in self.dbconn.get_associated_items(table, 'MapID', map[0])]
@@ -299,17 +427,15 @@ class Game:
             if event.key == pygame.K_e:
                 self.check_interact(self.pc.direction)
                 return True
-            if event.key == pygame.K_m:
-                self.map = self.load_map('Resources/map_2.png', [0, 0], 'dynamic', [50, 200])
             if event.key == pygame.K_q:
                 self.open_inventory()
                 return True
             if event.key == pygame.K_1:
                 self.new_game()
             if event.key == pygame.K_2:
-                self.save_game()
+                self.save_game(self.id)
             if event.key == pygame.K_3:
-                self.load_game(2 if self.id == 1 else 1)
+                self.load_game(3 if self.id == 1 else 1)
             if event.key == pygame.K_4:
                 self.delete_game(4)
         if event.type == pygame.KEYUP:
@@ -354,6 +480,7 @@ class Game:
         if not interact_obj:
             self.open_dialog('Hmmm... nothing to see here...')
         else:
+            self.pc.is_talking = not self.pc.is_talking
             self.pc.interact(self, interact_obj)
 
 
@@ -361,7 +488,7 @@ class Game:
         ''' Toggles the inventory screen
         :return: None        
         '''
-        self.inventory = True if not self.inventory else False
+        self.inventory = not self.inventory
 
     def open_dialog(self, text: str):
         ''' Toggles the dialog screen
@@ -373,5 +500,5 @@ class Game:
         self.pc.moveup = False
         self.pc.moveright = False
         self.pc.is_talking = not self.pc.is_talking
-        self.dialog = True if not self.dialog else False
+        self.dialog = not self.dialog
         print(text)

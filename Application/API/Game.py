@@ -1,6 +1,7 @@
 import pygame
 import os
 import operator
+import time
 
 from pygame.constants import RESIZABLE
 from . import Creature, DBManager, Item, Map
@@ -36,13 +37,20 @@ class Game:
         self.inventory_img = pygame.image.load(os.path.join(directory, 'Resources/inventory.png')).convert()
         self.fps = fps
         self.clock = pygame.time.Clock()
-        self.maps = self.load_all_maps(self.id)
+        self.maps = self.load_all_maps()
         self.map = self.load_map(self.id, True)
         self.npc_move_count = 0
 
-    def load_all_maps(self, id: int):
+        self.veil_alpha = 0
+        self.veil = pygame.Surface((self.screen_size[0], self.screen_size[1]))
+        self.veil.fill((0, 0, 0))
+        self.veil.set_alpha(self.veil_alpha)
+        self.fade_out = False
+        self.fade_in = False
+        self.transition_map = None
+
+    def load_all_maps(self):
         """ Loads and processes all maps associated with the game, given the Game ID
-        :int id: game ID
         :return: list of object Maps
         """
         return_array = []
@@ -75,17 +83,8 @@ class Game:
         for map in self.maps:
             if map.id == map_id:
                 self.screen.fill((0, 0, 0))
-                self.transition_maps()
                 self.pc.location = map.pc_start
                 return map
-
-
-    def transition_maps(self):
-        self.pc.is_talking = True
-        stages = 24
-        for i in range(stages):
-            self.screen.fill((0, 0, 0)) # attach to update display?
-        return
 
     
     def start_game(self, name: str, corner_icon: str):
@@ -117,7 +116,11 @@ class Game:
         """
         interact_obj = self.pc.check_surroundings(blockers, pos_index, range_index, add_dimensions)
         if type(interact_obj) == Map.Portal:
-            self.map = self.load_map(interact_obj.get_map())
+            self.fade_out = True
+            self.transition_map = interact_obj.get_map()
+            # self.fade('out', interact_obj.get_map())
+            # self.map = self.load_map(interact_obj.get_map())
+            # self.fade('in')
         elif not interact_obj:
             if char_relate(self.pc.location[pos_index], self.screen_size[pos_index] / 2 - 32) and char_relate(self.pc.location[pos_index], char_limit):
                 self.pc.location[pos_index] += speed
@@ -128,8 +131,10 @@ class Game:
         self.pc.direction = direction
         self.pc.icon = self.pc.icons[direction][self.pc.icon_index // index_rate]
 
+
     def get_index_rate(self, icons, speed):
         return self.fps // len(icons) * int(1/speed * 2)
+
 
     def update_display(self):
         ''' Main function to update the map display
@@ -163,6 +168,8 @@ class Game:
         # blit the map, pc location, items, and if necessary the dialog box or inventory
         self.screen.blit(self.map.image, tuple(self.map.location)) 
         self.screen.blit(self.pc.icon, tuple(self.pc.location))
+
+
         for item in self.map.items:
             item.animate(self.fps, self.npc_move_count)
             if not item.inventoried:
@@ -183,6 +190,22 @@ class Game:
                 self.screen.blit(item.inv_icon, (inv_x, inv_y))
                 inv_x += self.inventory_img.get_width() / 9
         self.npc_move_count += 1
+
+        if self.fade_out:
+            self.veil_alpha += 5
+            if self.veil_alpha >= 255:
+                self.fade_out = False
+                self.map = self.load_map(self.transition_map)
+                self.fade_in = True
+        elif self.fade_in:
+            self.veil_alpha -= 5
+            if self.veil_alpha <= 0:
+                self.fade_in = False
+                self.transition_map = None
+
+        self.veil.set_alpha(self.veil_alpha)
+        self.screen.blit(self.veil, (0, 0))
+
         pygame.display.update()
 
 
@@ -264,7 +287,6 @@ class Game:
         try:
             for map in self.maps:
                 for item in map.items:
-                    print(item.inventoried)
                     inventoried = 1 if item.inventoried else 0
                     item_dict = {
                         'MapID': item.map_id,
@@ -272,8 +294,6 @@ class Game:
                         'Inventoried': inventoried
                     }
                     self.dbconn.update_row('Items', item.id, item_dict)
-
-
                 for creature in map.creatures:
                     c_dict = {
                         'MapID': creature.map_id,
@@ -355,7 +375,7 @@ class Game:
             self.dialog = False
             self.inventory = False
             self.clock = pygame.time.Clock()
-            self.maps = self.load_all_maps(self.id)
+            self.maps = self.load_all_maps()
             self.map = self.load_map(self.id, True)
             self.npc_move_count = 0
             return True
@@ -468,7 +488,7 @@ class Game:
         ''' Toggles the inventory screen
         :return: None        
         '''
-        self.inventory = True if not self.inventory else False
+        self.inventory = not self.inventory
 
     def open_dialog(self, text: str):
         ''' Toggles the dialog screen
@@ -480,5 +500,5 @@ class Game:
         self.pc.moveup = False
         self.pc.moveright = False
         self.pc.is_talking = not self.pc.is_talking
-        self.dialog = True if not self.dialog else False
+        self.dialog = not self.dialog
         print(text)

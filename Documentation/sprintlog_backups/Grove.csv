@@ -1,0 +1,67 @@
+﻿Kanban Board/Tasks,,,,
+,,,,
+Create list of datapoints required in database on Save action,engine,Phil Elder,,
+Create DB Manager Class with full CRUD/Query Functionality,engine,Phil Elder,,
+Refine Roadmap/Release Plan/ Backlog,PO/SM,Katie,,
+"Map position, movement acts funny when map is smaller than screen","engine, bug",Phil Elder,,
+Create preliminary ERD for database structure,backend,Phil Elder,,
+"NPC, PC do not freeze on interact if button is clicked while NPC is moving",Only seems to happen while NPC is moving through PC,"engine, bug",Phil Elder,
+Draw and establish preliminary database structure,backend,,,
+PC doesn't stop moving on open_dialog when interacting with nothing,"engine, bug",Phil Elder,,
+AGILE/SCRUM Courses,Training,Katie,,
+Create preliminary town map,LoE: 80 hours,,,
+Color Code Epics,PO/SM,Katie,,
+Create Battle Map Shell,,,,
+Research and implement icon,,,,
+"Create ""switch map"" action on interaction",engine,Phil Elder,,
+Create Randomized Map Sprites for Forest Biome,,,,
+Create database populator for new Creatures,backend,Phil Elder,,
+"Update Map class to include ""resizes with window"" parameter (map_type = static, dynamic, sidescroll?)",engine,Phil Elder,,
+Create database populator for new Maps,backend,Phil Elder,,
+"Create ""switch map"" action on movement",engine,Phil Elder,,
+Create database populator for new Items,backend,Phil Elder,,
+Create duplicate environment for A/B testing,engine,Phil Elder,,
+Change Load Items function to load from database,engine,Phil Elder,,
+"Create ""resize window"" action",engine,Phil Elder,,
+Change Load Map function to load from database,engine,Phil Elder,,
+Create Calendar,Katie,,,
+Change Load Creatures function to load from database,engine,Phil Elder,,
+Create Google Drive,PO/SM,Katie,,
+Change Load PC function to load from database,engine,Phil Elder,,
+Create Sprint Archive Excel Sheet,PO/SM,Katie,,
+"Create Load Game function, dialog",engine,Phil Elder,,
+Create basic NPC interaction function,engine,Phil Elder,,
+,,,,
+Create Save Game function,,,engine,Phil Elder
+Create movement/action randomizer for NPC,,,engine,Phil Elder
+"Create New Game function, dialog",,,engine,Phil Elder
+Create basic NPC class,,,engine,Phil Elder
+"Populate database with initial NPC, item, PC, map for testing",,,backend,Phil Elder
+Create basic Open Inventory action,,,engine,Phil Elder
+"Write ""Add To Inventory"" function on interaction with item",,,engine,Phil Elder
+Initialize repo structure,,,,
+Create basic LeftMouseClick action type,,,engine,Phil Elder
+Create basic RightMouseClick action type,,,engine,Phil Elder
+Main Character - Create Art Board,,,Character Board,
+Create basic MouseWheel action type,,,engine,Phil Elder
+Research and select underlying DBMS,,,backend,
+Write combat alias creator function,,,engine,
+Create main.py to test classes,,,engine,Phil Elder
+Develop and test basic movement mechanics,,,frontend,Phil Elder
+Setup and configure test environment,,,,
+Main Character - Create Name,,,,
+Find test map to load and move on PC move,,,frontend,Phil Elder
+"Create preliminary item that ""moves"" with map",,,engine,Phil Elder
+Set default PC position to center of screen,,,engine,Phil Elder
+"Create Map Class with ""move"" function",,,engine,Phil Elder
+"Create ""Open Dialog Box"" action",,,engine,Phil Elder
+Set dialog box image to resize depending on screen size,,,engine,Phil Elder
+Draft weapon subclass,,,"engine, item",
+Draft armor subclass,,,"engine, item",
+Draft source subclass,,,"engine, item",
+Draft resource subclass,,,"engine, item",
+Draft character master class,,,"engine, creature",
+Draft main character subclass,,,"engine, creature",
+Draft potion subclass,,,"engine, item",
+Draft monster subclass,,,"engine, creature",
+Draft Item master class,,,"engine, item",

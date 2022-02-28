@@ -30,7 +30,7 @@ class Game:
         self.screen = pygame.display.set_mode(screen_size, RESIZABLE)
         self.running = True
         self.start_game(name, os.path.join(directory, corner_icon))
-        self.pc = self.load_character(self.id)
+        self.pc = self.load_character(self.id) if self.id != 0 else None
         self.dialog = False
         self.dialog_img = pygame.image.load(os.path.join(directory, 'Resources/dialog.png')).convert()
         self.inventory = False
@@ -83,7 +83,10 @@ class Game:
         for map in self.maps:
             if map.id == map_id:
                 self.screen.fill((0, 0, 0))
-                self.pc.location = map.pc_start
+                if self.id != 0:
+                    self.pc.location = map.pc_start
+                if map.type == 'static':
+                    map.location = [(((map.dimensions[0] // 2) - (self.screen_size[0] // 2)) * -1), (((map.dimensions[1] // 2) - (self.screen_size[1] // 2)) * -1)]
                 return map
 
     
@@ -149,25 +152,27 @@ class Game:
             if does_clear_queue:
               pygame.event.clear()
         # get all current map blocker locations. If the pc is moving, calculate index rate and pass functions to movement handler
-        if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
-            blockers = self.map.items + self.map.blocks + self.map.creatures + self.map.portals
-            index_rate = self.get_index_rate(self.pc.icons['E'], self.pc.speed)
-            self.pc.icon_index += 1
-            if self.pc.icon_index // index_rate == len(self.pc.icons['E']):
-                self.pc.icon_index = 0
-        if self.pc.moveup:
-            self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 1, 0, 'N', 0 - self.pc.speed, index_rate, True)
-        if self.pc.movedown:
-            self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), 
-                                    operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
-        if self.pc.moveleft:
-            self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 0, 1, 'W', 0 - self.pc.speed, index_rate, True)
-        if self.pc.moveright:
-            self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), 
-                                    operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
+        if self.id != 0:
+            if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
+                blockers = self.map.items + self.map.blocks + self.map.creatures + self.map.portals
+                index_rate = self.get_index_rate(self.pc.icons['E'], self.pc.speed)
+                self.pc.icon_index += 1
+                if self.pc.icon_index // index_rate == len(self.pc.icons['E']):
+                    self.pc.icon_index = 0
+            if self.pc.moveup:
+                self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 1, 0, 'N', 0 - self.pc.speed, index_rate, True)
+            if self.pc.movedown:
+                self.movement_handler(blockers, min(self.screen_size[1] - self.pc.size[1] - 10, self.map.dimensions[1] - self.pc.size[1] - 10), 
+                                        operator.lt, self.screen_size[1] - self.map.dimensions[1], operator.ge, 1, 0, 'S', self.pc.speed, index_rate, False)
+            if self.pc.moveleft:
+                self.movement_handler(blockers, -0.1, operator.gt, 0, operator.le, 0, 1, 'W', 0 - self.pc.speed, index_rate, True)
+            if self.pc.moveright:
+                self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), 
+                                        operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
+            self.screen.blit(self.pc.icon, tuple(self.pc.location))
         # blit the map, pc location, items, and if necessary the dialog box or inventory
         self.screen.blit(self.map.image, tuple(self.map.location)) 
-        self.screen.blit(self.pc.icon, tuple(self.pc.location))
+        
 
 
         for item in self.map.items:
@@ -415,51 +420,57 @@ class Game:
             self.change_screen((event.w, event.h))
         if event.type == pygame.QUIT:
             self.running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:
-                self.pc.move('N', True)
-            if event.key == pygame.K_a:
-                self.pc.move('W', True)
-            if event.key == pygame.K_s:
-                self.pc.move('S', True)
-            if event.key == pygame.K_d:
-                self.pc.move('E', True)
-            if event.key == pygame.K_e:
-                self.check_interact(self.pc.direction)
-                return True
-            if event.key == pygame.K_q:
-                self.open_inventory()
-                return True
-            if event.key == pygame.K_1:
-                self.new_game()
-            if event.key == pygame.K_2:
-                self.save_game(self.id)
-            if event.key == pygame.K_3:
-                self.load_game(3 if self.id == 1 else 1)
-            if event.key == pygame.K_4:
-                self.delete_game(4)
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_w:
-                self.pc.move('N', False)
-            if event.key == pygame.K_a:
-                self.pc.move('W', False)
-            if event.key == pygame.K_s:
-                self.pc.move('S', False)
-            if event.key == pygame.K_d:
-                self.pc.move('E', False)
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                # left click
-                self.check_interact(self.pc.direction, pygame.mouse.get_pos())
-            if event.button == 3:
-                # right click
-                self.check_interact(self.pc.direction, pygame.mouse.get_pos())
-            if event.button == 4:
-                # scroll up
-                self.check_interact(self.pc.direction, pygame.mouse.get_pos())
-            if event.button == 5:
-                # scroll down
-                self.check_interact(self.pc.direction, pygame.mouse.get_pos())
+        if self.id == 0:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    # left click
+                    self.check_interact('X', pygame.mouse.get_pos())
+        else:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w:
+                    self.pc.move('N', True)
+                if event.key == pygame.K_a:
+                    self.pc.move('W', True)
+                if event.key == pygame.K_s:
+                    self.pc.move('S', True)
+                if event.key == pygame.K_d:
+                    self.pc.move('E', True)
+                if event.key == pygame.K_e:
+                    self.check_interact(self.pc.direction)
+                    return True
+                if event.key == pygame.K_q:
+                    self.open_inventory()
+                    return True
+                if event.key == pygame.K_1:
+                    self.new_game()
+                if event.key == pygame.K_2:
+                    self.save_game(self.id)
+                if event.key == pygame.K_3:
+                    self.load_game(3 if self.id == 1 else 1)
+                if event.key == pygame.K_4:
+                    self.delete_game(4)
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_w:
+                    self.pc.move('N', False)
+                if event.key == pygame.K_a:
+                    self.pc.move('W', False)
+                if event.key == pygame.K_s:
+                    self.pc.move('S', False)
+                if event.key == pygame.K_d:
+                    self.pc.move('E', False)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    # left click
+                    self.check_interact(self.pc.direction, pygame.mouse.get_pos())
+                if event.button == 3:
+                    # right click
+                    self.check_interact(self.pc.direction, pygame.mouse.get_pos())
+                if event.button == 4:
+                    # scroll up
+                    self.check_interact(self.pc.direction, pygame.mouse.get_pos())
+                if event.button == 5:
+                    # scroll down
+                    self.check_interact(self.pc.direction, pygame.mouse.get_pos())
         return False
 
     def check_interact(self, direction: str, mouse_loc: tuple = (0, 0)):
@@ -468,20 +479,33 @@ class Game:
         :tuple mouse_loc (optional): location of the mouse on OnClick
         :return: None        
         '''
-        interaction_points = self.map.creatures + self.map.items
-        if direction == 'N':
-            interact_obj = self.pc.check_surroundings(interaction_points, 1, 0, True)
-        elif direction == 'S':
-            interact_obj = self.pc.check_surroundings(interaction_points, 1, 0, False)
-        elif direction == 'E':
-            interact_obj = self.pc.check_surroundings(interaction_points, 0, 1, False)
-        elif direction == 'W':
-            interact_obj = self.pc.check_surroundings(interaction_points, 0, 1, True)
-        if not interact_obj:
-            self.open_dialog('Hmmm... nothing to see here...')
+        if direction == 'X':
+            self.check_menu(mouse_loc)
         else:
-            self.pc.is_talking = not self.pc.is_talking
-            self.pc.interact(self, interact_obj)
+            interaction_points = self.map.creatures + self.map.items
+            if direction == 'N':
+                interact_obj = self.pc.check_surroundings(interaction_points, 1, 0, True)
+            elif direction == 'S':
+                interact_obj = self.pc.check_surroundings(interaction_points, 1, 0, False)
+            elif direction == 'E':
+                interact_obj = self.pc.check_surroundings(interaction_points, 0, 1, False)
+            elif direction == 'W':
+                interact_obj = self.pc.check_surroundings(interaction_points, 0, 1, True)
+            if not interact_obj:
+                self.open_dialog('Hmmm... nothing to see here...')
+            else:
+                self.pc.is_talking = not self.pc.is_talking
+                self.pc.interact(self, interact_obj)
+    
+    def check_menu(self, loc):
+        ''' Check the event against a map menu and fire the appropriate function
+        :tuple mouse_loc: location of the mouse on OnClick
+        :return: None        
+        '''
+        adjusted_location = (((self.map.dimensions[0] // 2) - (self.screen_size[0] // 2)), ((self.map.dimensions[1] // 2) - (self.screen_size[1] // 2)))
+        for p in self.map.portals:
+            if p.location[0] < loc[0] + adjusted_location[0] < p.location[0] + p.size[0] and p.location[1] < loc[1] + adjusted_location[1] < p.location[1] + p.size[1]:
+                print(loc)
 
 
     def open_inventory(self):

@@ -67,7 +67,7 @@ class Game:
         return return_array
 
 
-    def load_map(self, id: int, is_init=False):
+    def load_map(self, id: int, is_init = False):
         """ Loads the Map class with the game ID (loads default map) or map ID
         :int id: game ID if is_init else map ID
         :bool is_init: Is initial map (true if loading game, false if loading map)(optional: default False)
@@ -120,10 +120,7 @@ class Game:
         interact_obj = self.pc.check_surroundings(blockers, pos_index, range_index, add_dimensions)
         if type(interact_obj) == Map.Portal:
             self.fade_out = True
-            self.transition_map = interact_obj.get_map()
-            # self.fade('out', interact_obj.get_map())
-            # self.map = self.load_map(interact_obj.get_map())
-            # self.fade('in')
+            self.transition_map = self.load_map(interact_obj.get_map())
         elif not interact_obj:
             if char_relate(self.pc.location[pos_index], self.screen_size[pos_index] / 2 - 32) and char_relate(self.pc.location[pos_index], char_limit):
                 self.pc.location[pos_index] += speed
@@ -143,6 +140,18 @@ class Game:
         ''' Main function to update the map display
         :return: None        
         '''
+        if self.fade_out:
+            self.veil_alpha += 5
+            if self.veil_alpha >= 255:
+                self.fade_out = False
+                self.map = self.transition_map                    
+                self.fade_in = True
+                self.transition_map = None
+        elif self.fade_in:
+            self.veil_alpha -= 5
+            if self.veil_alpha <= 0:
+                self.fade_in = False 
+
         self.clock.tick(self.fps)
         if self.npc_move_count > self.fps * 3:
             self.npc_move_count = 0
@@ -151,7 +160,9 @@ class Game:
             does_clear_queue = self.handle_event(event)
             if does_clear_queue:
               pygame.event.clear()
+
         # get all current map blocker locations. If the pc is moving, calculate index rate and pass functions to movement handler
+        self.screen.blit(self.map.image, tuple(self.map.location)) 
         if self.id != 0:
             if self.pc.moveup or self.pc.movedown or self.pc.moveleft or self.pc.moveright:
                 blockers = self.map.items + self.map.blocks + self.map.creatures + self.map.portals
@@ -169,9 +180,10 @@ class Game:
             if self.pc.moveright:
                 self.movement_handler(blockers, min(self.screen_size[0] - self.pc.size[1] - 1, self.map.dimensions[0] - self.pc.size[0] - 1), 
                                         operator.lt, self.screen_size[0] - self.map.dimensions[0], operator.ge, 0, 1, 'E', self.pc.speed, index_rate, False)
-            self.screen.blit(self.pc.icon, tuple(self.pc.location))
+            if self.transition_map == None:
+                self.screen.blit(self.pc.icon, tuple(self.pc.location))
         # blit the map, pc location, items, and if necessary the dialog box or inventory
-        self.screen.blit(self.map.image, tuple(self.map.location)) 
+        
         
 
 
@@ -179,6 +191,8 @@ class Game:
             item.animate(self.fps, self.npc_move_count)
             if not item.inventoried:
                 self.screen.blit(item.icon, tuple(item.location))
+            else:
+                self.map.items.remove(item)
         for creature in self.map.creatures:
             npc_index_rate = self.get_index_rate(creature.icons['E'], creature.speed)
             creature.action(self.fps, self.npc_move_count, npc_index_rate, self.pc)
@@ -195,19 +209,6 @@ class Game:
                 self.screen.blit(item.inv_icon, (inv_x, inv_y))
                 inv_x += self.inventory_img.get_width() / 9
         self.npc_move_count += 1
-
-        if self.fade_out:
-            self.veil_alpha += 5
-            if self.veil_alpha >= 255:
-                self.fade_out = False
-                self.map = self.load_map(self.transition_map)
-                self.fade_in = True
-        elif self.fade_in:
-            self.veil_alpha -= 5
-            if self.veil_alpha <= 0:
-                self.fade_in = False
-                self.transition_map = None
-
         self.veil.set_alpha(self.veil_alpha)
         self.screen.blit(self.veil, (0, 0))
 
@@ -216,7 +217,7 @@ class Game:
 
     def load_character(self, game_id: int):
         ''' Loads the PC on game initialization
-        :return: None        
+        :return: PC Object        
         '''
         c = self.dbconn.get_row_by_id('PC', game_id)
         coords = [self.screen_size[0] / 2 -32, self.screen_size[1] / 2 - 32]
@@ -254,7 +255,7 @@ class Game:
         """
         # try:
         game_count = self.dbconn.get_row_count('Games')
-        if game_count >= 3:
+        if game_count > 3:
             self.open_dialog('There are already three saved games! Delete a game to create a new one')
         else:
             new_map_id = self.dbconn.get_next_id('Maps')
@@ -279,7 +280,7 @@ class Game:
                 map[0] = new_map_id
                 self.dbconn.insert_row('Maps', map)
                 new_map_id += 1  
-            return True
+            self.load_game(new_game_id)
         # except Exception as e:
         #     print(e)
         #     return False
@@ -289,6 +290,7 @@ class Game:
         :int id: game ID
         return: bool success
         """
+        print(id)
         try:
             for map in self.maps:
                 for item in map.items:
@@ -345,6 +347,7 @@ class Game:
                 'SpellEquip': p.spell_equip
             }
             self.save_creature(p, 'PC', p_dict)
+            print('wwwwooooootst34k')
             return True
         except Exception as e:
             print(e)
@@ -381,7 +384,8 @@ class Game:
             self.inventory = False
             self.clock = pygame.time.Clock()
             self.maps = self.load_all_maps()
-            self.map = self.load_map(self.id, True)
+            self.fade_out = True
+            self.transition_map = self.load_map(self.id, True)
             self.npc_move_count = 0
             return True
         except Exception as e:
@@ -393,6 +397,7 @@ class Game:
         :int id: game ID
         return: bool success
         """
+        print(id)
         try:
             associated_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
             for map in associated_maps:
@@ -405,6 +410,7 @@ class Game:
                         self.dbconn.delete_rows('ItemInventory', [pc_id], 'CreatureID')
                 self.dbconn.delete_rows('Maps', [map[0]])
             self.dbconn.delete_rows('Games', [id])
+            print('it worked!')
             return True
         except Exception as e:
             print(e)
@@ -494,8 +500,9 @@ class Game:
             if not interact_obj:
                 self.open_dialog('Hmmm... nothing to see here...')
             else:
-                self.pc.is_talking = not self.pc.is_talking
-                self.pc.interact(self, interact_obj)
+                thing = self.pc.interact(self, interact_obj)
+                if not isinstance(interact_obj, Item.Item):
+                    self.pc.is_talking = not self.pc.is_talking
     
     def check_menu(self, loc):
         ''' Check the event against a map menu and fire the appropriate function
@@ -505,7 +512,16 @@ class Game:
         adjusted_location = (((self.map.dimensions[0] // 2) - (self.screen_size[0] // 2)), ((self.map.dimensions[1] // 2) - (self.screen_size[1] // 2)))
         for p in self.map.portals:
             if p.location[0] < loc[0] + adjusted_location[0] < p.location[0] + p.size[0] and p.location[1] < loc[1] + adjusted_location[1] < p.location[1] + p.size[1]:
-                print(loc)
+                if str(p.dest_id)[:5] == '44444':
+                    self.delete_game(int(str(p.dest_id)[-1]))
+                elif p.dest_id == 55555:
+                    self.new_game()
+                elif str(p.dest_id)[:5] == '66666':
+                    self.load_game(int(str(p.dest_id)[-1]))
+                else:
+                    self.fade_out = True
+                    self.transition_map = self.load_map(p.get_map())
+                
 
 
     def open_inventory(self):
@@ -519,10 +535,11 @@ class Game:
         :str text: text to display on the dialog screen
         :return: None        
         '''
-        self.pc.movedown = False
-        self.pc.moveleft = False
-        self.pc.moveup = False
-        self.pc.moveright = False
-        self.pc.is_talking = not self.pc.is_talking
+        if self.id != 0:
+            self.pc.movedown = False
+            self.pc.moveleft = False
+            self.pc.moveup = False
+            self.pc.moveright = False
+            self.pc.is_talking = not self.pc.is_talking
         self.dialog = not self.dialog
         print(text)

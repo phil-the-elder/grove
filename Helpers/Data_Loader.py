@@ -66,7 +66,7 @@ elif data_type in ['portal', 'p']:
     location = input("Coordinates of top left corner (format: x, y): ")
     size = input("Size (format: x, y): ")
     mapid = input("Origin Map ID: ")
-    destmapid  = input("Destination Map ID: ")
+    destmapid  = input("Destination Map ID (44444, 55555, 66666, 77777, 88888, 99999 for delete, new, load, save, options, quit): ")
     row = [mapid, location, size, destmapid]
     table = 'Portals'
 

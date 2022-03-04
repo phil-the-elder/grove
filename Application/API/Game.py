@@ -121,6 +121,7 @@ class Game:
         if type(interact_obj) == Map.Portal:
             self.fade_out = True
             self.transition_map = self.load_map(interact_obj.get_map())
+            print(interact_obj.get_map())
         elif not interact_obj:
             if char_relate(self.pc.location[pos_index], self.screen_size[pos_index] / 2 - 32) and char_relate(self.pc.location[pos_index], char_limit):
                 self.pc.location[pos_index] += speed
@@ -140,6 +141,7 @@ class Game:
         ''' Main function to update the map display
         :return: None        
         '''
+
         if self.fade_out:
             self.veil_alpha += 5
             if self.veil_alpha >= 255:
@@ -151,6 +153,7 @@ class Game:
             self.veil_alpha -= 5
             if self.veil_alpha <= 0:
                 self.fade_in = False 
+
 
         self.clock.tick(self.fps)
         if self.npc_move_count > self.fps * 3:
@@ -273,6 +276,8 @@ class Game:
                     new_item_id = self.dbconn.get_next_id(table)
                     for item in template_rows:
                         item = list(item)
+                        if table == 'Portals':
+                            item[4] = new_map_id + item[4] - item[1]
                         item[0] = new_item_id
                         item[1] = new_map_id
                         self.dbconn.insert_row(table, item)
@@ -290,68 +295,72 @@ class Game:
         :int id: game ID
         return: bool success
         """
-        print(id)
-        try:
-            for map in self.maps:
-                for item in map.items:
-                    inventoried = 1 if item.inventoried else 0
-                    item_dict = {
-                        'MapID': item.map_id,
-                        'Location': ', '.join([str(i) for i in item.location]),
-                        'Inventoried': inventoried
-                    }
-                    self.dbconn.update_row('Items', item.id, item_dict)
-                for creature in map.creatures:
-                    c_dict = {
-                        'MapID': creature.map_id,
-                        'Location': ', '.join([str(c) for c in creature.location]),
-                        'Speed': creature.speed
-                    }
-                    self.save_creature(creature, 'NPCs', c_dict)
-                for monster in map.monsters:
-                    m_dict = {
-                        'MapID': monster.map_id,
-                        'Location': ', '.join([str(l) for l in monster.location]),
-                        'Speed': monster.speed,
-                        'HeadEquip': monster.head_equip,
-                        'BodyEquip': monster.body_equip,
-                        'MeleeEquip': monster.melee_equip,
-                        'RangedEquip': monster.ranged_equip,
-                        'SpellEquip': monster.spell_equip
-                    }
-                    self.save_creature(monster, 'Monsters', m_dict)
-                
-            p = self.pc
-            p_dict = {
-                'Size': ', '.join([str(p) for p in p.size]),
-                'Speed': p.speed,
-                'Name': p.name,
-                'Strength': p.strength,
-                'Accuracy': p.accuracy,
-                'Intelligence': p.intelligence,
-                'Dexterity': p.dexterity,
-                'CurrHP': p.currHP,
-                'MaxHP': p.maxHP,
-                'Melee': p.melee,
-                'Ranged': p.ranged,
-                'Magic': p.magic,
-                'Farming': p.farming,
-                'Trading': p.trading,
-                'Fishing': p.fishing,
-                'Handling': p.handling,
-                'Alchemy': p.alchemy,
-                'HeadEquip': p.head_equip,
-                'BodyEquip': p.body_equip,
-                'MeleeEquip': p.melee_equip,
-                'RangedEquip': p.ranged_equip,
-                'SpellEquip': p.spell_equip
+        # try:
+        for map in self.maps:
+            for item in map.items:
+                inventoried = 1 if item.inventoried else 0
+                item_dict = {
+                    'MapID': item.map_id,
+                    'Location': ', '.join([str(i) for i in item.location]),
+                    'Inventoried': inventoried
+                }
+                self.dbconn.update_row('Items', item.id, item_dict)
+            for creature in map.creatures:
+                c_dict = {
+                    'MapID': creature.map_id,
+                    'Location': ', '.join([str(c) for c in creature.location]),
+                    'Speed': creature.speed
+                }
+                self.save_creature(creature, 'NPCs', c_dict)
+            for monster in map.monsters:
+                m_dict = {
+                    'MapID': monster.map_id,
+                    'Location': ', '.join([str(l) for l in monster.location]),
+                    'Speed': monster.speed,
+                    'HeadEquip': monster.head_equip,
+                    'BodyEquip': monster.body_equip,
+                    'MeleeEquip': monster.melee_equip,
+                    'RangedEquip': monster.ranged_equip,
+                    'SpellEquip': monster.spell_equip
+                }
+                self.save_creature(monster, 'Monsters', m_dict)
+        for inventoried_item in self.pc.inventory:
+            inventory_dict = {
+                'MapID': 99999,
+                'Inventoried': 1
             }
-            self.save_creature(p, 'PC', p_dict)
-            print('wwwwooooootst34k')
-            return True
-        except Exception as e:
-            print(e)
-            return False
+            self.dbconn.update_row('Items', inventoried_item.id, inventory_dict)
+        p = self.pc
+        p_dict = {
+            'Size': ', '.join([str(p) for p in p.size]),
+            'Speed': p.speed,
+            'Name': p.name,
+            'Strength': p.strength,
+            'Accuracy': p.accuracy,
+            'Intelligence': p.intelligence,
+            'Dexterity': p.dexterity,
+            'CurrHP': p.currHP,
+            'MaxHP': p.maxHP,
+            'Melee': p.melee,
+            'Ranged': p.ranged,
+            'Magic': p.magic,
+            'Farming': p.farming,
+            'Trading': p.trading,
+            'Fishing': p.fishing,
+            'Handling': p.handling,
+            'Alchemy': p.alchemy,
+            'HeadEquip': p.head_equip,
+            'BodyEquip': p.body_equip,
+            'MeleeEquip': p.melee_equip,
+            'RangedEquip': p.ranged_equip,
+            'SpellEquip': p.spell_equip
+        }
+        self.save_creature(p, 'PC', p_dict)
+        print('wwwwooooootst34k')
+        return True
+        # except Exception as e:
+        #     print(e)
+        #     return False
 
     def save_creature(self, creature_obj, table, row):
         """ sub-function of save_game for saving PC, NPCs and monsters
@@ -377,20 +386,20 @@ class Game:
         :int id: game ID
         return: bool success
         """
-        try:
-            self.id = id
-            self.pc = self.load_character(self.id)
-            self.dialog = False
-            self.inventory = False
-            self.clock = pygame.time.Clock()
-            self.maps = self.load_all_maps()
-            self.fade_out = True
-            self.transition_map = self.load_map(self.id, True)
-            self.npc_move_count = 0
-            return True
-        except Exception as e:
-            print(e)
-            return False
+        # try:
+        self.pc = self.load_character(id)
+        self.id = id
+        self.dialog = False
+        self.inventory = False
+        self.clock = pygame.time.Clock()
+        self.maps = self.load_all_maps()
+        self.fade_out = True
+        self.transition_map = self.load_map(self.id, True)
+        self.npc_move_count = 0
+        return True
+        # except Exception as e:
+        #     print(e)
+        #     return False
 
     def delete_game(self, id):
         """ deletes a game, associated maps, and all associated items and creatures given an id
@@ -398,23 +407,23 @@ class Game:
         return: bool success
         """
         print(id)
-        try:
-            associated_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
-            for map in associated_maps:
-                tables_to_delete = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
-                for table in tables_to_delete:
-                    rows_to_delete = [r[0] for r in self.dbconn.get_associated_items(table, 'MapID', map[0])]
-                    self.dbconn.delete_rows(table, rows_to_delete)
-                    if table == 'PC' and len(rows_to_delete) > 0:
-                        pc_id = rows_to_delete[0]
-                        self.dbconn.delete_rows('ItemInventory', [pc_id], 'CreatureID')
-                self.dbconn.delete_rows('Maps', [map[0]])
-            self.dbconn.delete_rows('Games', [id])
-            print('it worked!')
-            return True
-        except Exception as e:
-            print(e)
-            return False
+        # try:
+        associated_maps = self.dbconn.get_associated_items('Maps', 'GameID', id)
+        for map in associated_maps:
+            tables_to_delete = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
+            for table in tables_to_delete:
+                rows_to_delete = [r[0] for r in self.dbconn.get_associated_items(table, 'MapID', map[0])]
+                self.dbconn.delete_rows(table, rows_to_delete)
+                if table == 'PC' and len(rows_to_delete) > 0:
+                    pc_id = rows_to_delete[0]
+                    self.dbconn.delete_rows('ItemInventory', [pc_id], 'CreatureID')
+            self.dbconn.delete_rows('Maps', [map[0]])
+        self.dbconn.delete_rows('Games', [id])
+        print('it worked!')
+        return True
+        # except Exception as e:
+        #     print(e)
+        #     return False
 
 
     def handle_event(self, event):

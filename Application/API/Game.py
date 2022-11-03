@@ -141,7 +141,7 @@ class Game:
         ''' Main function to update the map display
         :return: None        
         '''
-
+        # increase or decrease veil alpha if screen is set to fade out
         if self.fade_out:
             self.veil_alpha += 5
             if self.veil_alpha >= 255:
@@ -262,7 +262,7 @@ class Game:
             self.open_dialog('There are already three saved games! Delete a game to create a new one')
         else:
             new_map_id = self.dbconn.get_next_id('Maps')
-            new_game_id = self.dbconn.get_next_id('Games')
+            new_game_id = self.dbconn.get_next_game_id()
             self.dbconn.insert_row('Games', [new_game_id])
             template_connection = DBManager.DBManager(os.path.join(self.directory, 'Database/template.db'))
             template_maps = template_connection.get_all_rows('Maps')
@@ -273,7 +273,10 @@ class Game:
                 tables_to_update = ['Items', 'Blocks', 'Monsters', 'NPCs', 'PC', 'Portals']
                 for table in tables_to_update:
                     template_rows = template_connection.get_associated_items(table, 'MapID', old_id)
-                    new_item_id = self.dbconn.get_next_id(table)
+                    if table == 'PC':
+                        new_item_id = new_game_id
+                    else:
+                        new_item_id = self.dbconn.get_next_id(table)
                     for item in template_rows:
                         item = list(item)
                         if table == 'Portals':
@@ -290,12 +293,12 @@ class Game:
         #     print(e)
         #     return False
 
-    def save_game(self, id):
+    def save_game(self):
         """ save a game given a game ID
-        :int id: game ID
         return: bool success
         """
         # try:
+        print(self.id)
         for map in self.maps:
             for item in map.items:
                 inventoried = 1 if item.inventoried else 0
@@ -459,7 +462,7 @@ class Game:
                 if event.key == pygame.K_1:
                     self.new_game()
                 if event.key == pygame.K_2:
-                    self.save_game(self.id)
+                    self.save_game()
                 if event.key == pygame.K_3:
                     self.load_game(3 if self.id == 1 else 1)
                 if event.key == pygame.K_4:

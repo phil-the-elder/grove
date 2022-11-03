@@ -1,2 +1,2 @@
 # grove
-Literally anthing 
+Literally anything 

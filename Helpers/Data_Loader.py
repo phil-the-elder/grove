@@ -66,8 +66,8 @@ elif data_type in ['portal', 'p']:
     location = input("Coordinates of top left corner (format: x, y): ")
     size = input("Size (format: x, y): ")
     mapid = input("Origin Map ID: ")
-    destmapid  = input("Destination Map ID: ")
-    row = [location, size, mapid, destmapid]
+    destmapid  = input("Destination Map ID (44444, 55555, 66666, 77777, 88888, 99999 for delete, new, load, save, options, quit): ")
+    row = [mapid, location, size, destmapid]
     table = 'Portals'
 
 elif data_type in ['item', 'i']:
@@ -96,7 +96,8 @@ elif data_type in ['map', 'm']:
     coordinates = input("Coordinates of top left corner (format: x, y): ")
     type  = input("Type (static, dynamic, sidescroll): ")
     pcstart = input("Starting Coordinates for top left corner of PC (x, y): ")
-    row = [gameid, image, coordinates, type, pcstart]
+    isdefault = input("Default map for game? (1 for yes, 0 for no): ")
+    row = [gameid, image, coordinates, type, pcstart, isdefault]
     table = 'Maps'
 
 

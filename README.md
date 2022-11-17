@@ -43,4 +43,3 @@ The game will eventually be served in containers, but for now, the following tec
 * Code: [Python]( https://www.python.org/)
 * Database: [SqlLite](https://www.sqlite.org/index.html/)
 * Storyboarding/Agile Management: [Miro](https://miro.com/index/)
-

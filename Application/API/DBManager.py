@@ -109,6 +109,21 @@ class DBManager:
         rows = cur.fetchall()
         return rows
 
+    def get_next_game_id(self):
+        """
+        Get the lowest available game ID
+        :return: int id
+        """
+        sql = f'SELECT * FROM Games ORDER BY ROWID DESC'
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        counter = 1
+        for row in rows:
+            if row[0] != counter:
+                return counter
+            counter += 1
+
     
     def get_next_id(self, table):
         """

@@ -8,7 +8,7 @@ def main():
     :return: None
     '''
     curr_dir = os.path.dirname(__file__)
-    game = Game.Game(1, (1200, 1000), 'Grove', curr_dir, 'Resources/window_icon.ico', 60)
+    game = Game.Game(0, (1200, 1000), 'Grove', curr_dir, 'Resources/window_icon.ico', 60)
     while game.running:
         game.update_display()
 if __name__ == '__main__':

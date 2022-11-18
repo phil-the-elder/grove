@@ -4,4 +4,4 @@ Grove is served by an RDBMS structure currently supported by SqlLite. There are 
 This structure will be replaced by a python function in a later release.
 
 ## Entity Relationship Diagram:
-![Database Structure Tree](https://github.com/kbutler7/grove/Application/Database/db_structure_tree.JPG)
+![Database Structure Tree](https://github.com/kbutler7/grove/blob/57452e04675b4b15e317f80640abf5b6df8ae512/Application/Database/db_structure_tree.JPG)
